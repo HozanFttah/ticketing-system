@@ -1109,7 +1109,7 @@ width: auto; /* Allow natural width */
         </div>
     </div>
 <audio id="notificationSound" src="/audio.mp3" preload="auto"></audio>
-    <script>
+  <script>
         // Enhanced IT Support Admin Panel Script
         let tickets = [];
         let currentFilters = {
@@ -1117,241 +1117,18 @@ width: auto; /* Allow natural width */
             status: '',
             urgency: ''
         };
-
-        // Connect to WebSocket for real-time updates
-        let socket;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
-        const reconnectDelay = 5000; // 5 seconds
-
-        function connectWebSocket() {
-            // Use wss:// if your site is HTTPS, otherwise ws://
-            const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-            socket = new WebSocket(protocol + window.location.host + '/ws');
-
-            socket.onopen = function() {
-                console.log('WebSocket connection established');
-                reconnectAttempts = 0; // Reset reconnect attempts on successful connection
-                
-                // Show connection status notification
-                showNotification({
-                    title: 'Connection Established',
-                    message: 'Real-time updates are now active',
-                    type: 'success',
-                    autoClose: 3000
-                });
-            };
-let audioEnabled = false;
-    document.getElementById('enableAudioBtn').addEventListener('click', () => {
-        audioEnabled = true;
-        document.getElementById('enableAudioBtn').textContent = '🔔';
-        document.getElementById('enableAudioBtn').disabled = true;
-        // Test the sound to confirm interaction
-        const notificationSound = document.getElementById('notificationSound');
-        notificationSound.play().catch(error => console.error('Error testing sound:', error));
-    });
-            socket.onmessage = function(event) {
-                try {
-                    const message = JSON.parse(event.data);
-                    
-                    if (message.type === 'NEW_TICKET') {
-const notificationSound = document.getElementById('notificationSound');
-            if (audioEnabled) {
-                notificationSound.play().catch(error => console.error('Error playing sound:', error));
-            }
-                        showNewTicketNotification(message.ticket);
-                        // Add the new ticket to our local array
-                        tickets.unshift(message.ticket);
-
-                        // Update UI
-                        applyFilters();
-                        updateStats();
-                    } else if (message.type === 'TICKET_UPDATED') {
-                        // Update the local ticket
-                        const index = tickets.findIndex(t => t.id === message.ticket.id);
-                        if (index !== -1) {
-                            tickets[index] = message.ticket;
-                            // Update UI
-                            applyFilters();
-                            updateStats();
-                        }
-                    } else if (message.type === 'TICKET_DELETED') {
-                        // Remove the ticket from local array
-                        tickets = tickets.filter(t => t.id !== message.ticketId);
-                        // Update UI
-                        applyFilters();
-                        updateStats();
-                    }
-                } catch (error) {
-                    console.error('Error processing WebSocket message:', error);
-                }
-            };
-
-            socket.onclose = function(event) {
-                if (event.wasClean) {
-                    console.log(`WebSocket closed cleanly, code=${event.code}, reason=${event.reason}`);
-                } else {
-                    console.log('WebSocket connection lost');
-                }
-                
-                // Only attempt to reconnect if we haven't exceeded max attempts
-                if (reconnectAttempts < maxReconnectAttempts) {
-                    reconnectAttempts++;
-                    const delay = reconnectAttempts * reconnectDelay;
-                    console.log(`Attempting to reconnect in ${delay/1000} seconds... (Attempt ${reconnectAttempts} of ${maxReconnectAttempts})`);
-                    
-                    setTimeout(() => {
-                        connectWebSocket();
-                    }, delay);
-                    
-                    // Show reconnection notification
-                    showNotification({
-                        title: 'Connection Lost',
-                        message: `Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`,
-                        type: 'warning',
-                        autoClose: 3000
-                    });
-                } else {
-                    console.log('Max reconnection attempts reached. Please refresh the page.');
-                    showNotification({
-                        title: 'Connection Failed',
-                        message: 'Unable to establish real-time connection. Please refresh the page.',
-                        type: 'error',
-                        autoClose: false
-                    });
-                }
-            };
-
-            socket.onerror = function(error) {
-                console.error('WebSocket error:', error);
-            };
-        }
-
-        // Show a notification
-        function showNotification({ title, message, type = 'info', autoClose = 5000 }) {
-            const container = document.getElementById('notificationContainer');
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            
-            // Set icon and color based on type
-            let icon, color;
-            switch (type) {
-                case 'success':
-                    icon = 'fas fa-check-circle';
-                    color = 'var(--success-color)';
-                    break;
-                case 'warning':
-                    icon = 'fas fa-exclamation-triangle';
-                    color = 'var(--warning-color)';
-                    break;
-                case 'error':
-                    icon = 'fas fa-times-circle';
-                    color = 'var(--danger-color)';
-                    break;
-                default:
-                    icon = 'fas fa-info-circle';
-                    color = 'var(--info-color)';
-            }
-            
-            notification.innerHTML = `
-                <div class="notification-header">
-                    <span class="notification-title" style="color: ${color}">
-                        <i class="${icon}"></i> ${title}
-                    </span>
-                    <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="notification-body">
-                    ${message}
-                </div>
-            `;
-            
-            if (autoClose) {
-                notification.innerHTML += `
-                    <div class="notification-footer">
-                        <small>${new Date().toLocaleTimeString()}</small>
-                        <div class="progress-bar" style="height: 3px; background: rgba(0,0,0,0.1); width: 100%; margin-top: 0.5rem;">
-                            <div class="progress-fill" style="height: 100%; background: ${color}; width: 100%; animation: progress ${autoClose}ms linear forwards;"></div>
-                        </div>
-                    </div>
-                `;
-                
-                // Add CSS for progress animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes progress {
-                        from { width: 100%; }
-                        to { width: 0%; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            container.prepend(notification);
-            
-            // Show the notification with animation
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 10);
-            
-            // Auto-remove if autoClose is set
-            if (autoClose) {
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 300);
-                }, autoClose);
-            }
-        }
-
-        // Show notification for new ticket
-        function showNewTicketNotification(ticket) {
-            const urgencyClass = `notification-urgency-${ticket.urgency.toLowerCase()}`;
-            const urgencyIcon = ticket.urgency === 'High' ? 'fas fa-exclamation-circle' : 
-                              ticket.urgency === 'Medium' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
-            
-            showNotification({
-                title: 'New Ticket Created',
-                message: `
-                    <strong>#${ticket.id}</strong> - ${ticket.name}<br>
-                    <small>${ticket.location} • ${ticket.department}</small><br><br>
-                    <span class="notification-urgency ${urgencyClass}">
-                        <i class="${urgencyIcon}"></i> ${ticket.urgency} Priority
-                    </span>
-                `,
-                type: 'info',
-                autoClose: 10000
-            });
-        }
-
-        // Focus on a specific ticket
-        function focusTicket(ticketId) {
-            loadTickets().then(() => {
-                const ticketElement = document.querySelector(`.ticket-id[data-id="${ticketId}"]`)?.closest('.ticket-card');
-                if (ticketElement) {
-                    // Scroll to ticket
-                    ticketElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    // Add highlight effect
-                    ticketElement.classList.add('pulse');
-                    
-                    // Remove highlight after 3 seconds
-                    setTimeout(() => {
-                        ticketElement.classList.remove('pulse');
-                    }, 3000);
-                }
-            });
-        }
+        
+        // Polling interval for updates (in milliseconds)
+        const POLL_INTERVAL = 5000; // 5 seconds
+        let pollIntervalId;
 
         // Load tickets when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            // Connect to WebSocket
-            connectWebSocket();
-            
             // Load initial tickets
             loadTickets();
+            
+            // Set up polling for updates
+            pollIntervalId = setInterval(loadTickets, POLL_INTERVAL);
             
             // Add event listener for escape key to close modal
             document.addEventListener('keydown', (e) => {
@@ -1368,13 +1145,16 @@ const notificationSound = document.getElementById('notificationSound');
             const errorText = document.getElementById('errorText');
             
             try {
-                // Show loading state
-                container.innerHTML = `
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading tickets...</p>
-                    </div>
-                `;
+                // Show loading state only if we don't have any tickets yet
+                if (tickets.length === 0) {
+                    container.innerHTML = `
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading tickets...</p>
+                        </div>
+                    `;
+                }
+                
                 errorMsg.style.display = 'none';
                 
                 // Fetch tickets from API
@@ -1384,14 +1164,19 @@ const notificationSound = document.getElementById('notificationSound');
                     throw new Error(`Server returned ${response.status} ${response.statusText}`);
                 }
                 
-                tickets = await response.json();
+                const newTickets = await response.json();
                 
-                // Sort tickets by timestamp (newest first)
-                tickets.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                // Update UI
-                applyFilters();
-                updateStats();
+                // Check if tickets have changed
+                if (JSON.stringify(tickets) !== JSON.stringify(newTickets)) {
+                    tickets = newTickets;
+                    
+                    // Sort tickets by timestamp (newest first)
+                    tickets.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+                    // Update UI
+                    applyFilters();
+                    updateStats();
+                }
                 
             } catch (error) {
                 console.error('Error loading tickets:', error);
@@ -1789,7 +1574,83 @@ const notificationSound = document.getElementById('notificationSound');
             document.body.style.overflow = '';
         }
 
-
-    </script>
-</body>
+        // Show a notification
+        function showNotification({ title, message, type = 'info', autoClose = 5000 }) {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            
+            // Set icon and color based on type
+            let icon, color;
+            switch (type) {
+                case 'success':
+                    icon = 'fas fa-check-circle';
+                    color = 'var(--success-color)';
+                    break;
+                case 'warning':
+                    icon = 'fas fa-exclamation-triangle';
+                    color = 'var(--warning-color)';
+                    break;
+                case 'error':
+                    icon = 'fas fa-times-circle';
+                    color = 'var(--danger-color)';
+                    break;
+                default:
+                    icon = 'fas fa-info-circle';
+                    color = 'var(--info-color)';
+            }
+            
+            notification.innerHTML = `
+                <div class="notification-header">
+                    <span class="notification-title" style="color: ${color}">
+                        <i class="${icon}"></i> ${title}
+                    </span>
+                    <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="notification-body">
+                    ${message}
+                </div>
+            `;
+            
+            if (autoClose) {
+                notification.innerHTML += `
+                    <div class="notification-footer">
+                        <small>${new Date().toLocaleTimeString()}</small>
+                        <div class="progress-bar" style="height: 3px; background: rgba(0,0,0,0.1); width: 100%; margin-top: 0.5rem;">
+                            <div class="progress-fill" style="height: 100%; background: ${color}; width: 100%; animation: progress ${autoClose}ms linear forwards;"></div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add CSS for progress animation
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes progress {
+                        from { width: 100%; }
+                        to { width: 0%; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            container.prepend(notification);
+            
+            // Show the notification with animation
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // Auto-remove if autoClose is set
+            if (autoClose) {
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, autoClose);
+            }
+        }
+    </script></body>
 </html>
