@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Support Ticketing System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --radius: 12px;
+            --shadow: 0 10px 20px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+            z-index: 2;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: -50px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .header h1 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            margin-bottom: 10px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2vw, 1.1rem);
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-logo {
+            height: 120px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            transition: var(--transition);
+        }
+
+        .header-logo:hover {
+            transform: scale(1.05) rotate(-5deg);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)) brightness(1.1);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: var(--radius);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input[type="text"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            border: 2px dashed var(--accent);
+            border-radius: var(--radius);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(72, 149, 239, 0.05);
+            gap: 8px;
+        }
+
+        .file-upload-label:hover {
+            background: rgba(72, 149, 239, 0.1);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .file-upload-label i {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        .urgency-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .urgency-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .urgency-option {
+            position: relative;
+        }
+
+        .urgency-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .urgency-option label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 0;
+            gap: 8px;
+        }
+
+        .urgency-option label i {
+            font-size: 1.2rem;
+        }
+
+        .urgency-option input[type="radio"]:checked + label {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .low { border-color: #2ecc71; }
+        .medium { border-color: #f39c12; }
+        .high { border-color: #e74c3c; }
+
+        .urgency-option input[type="radio"]:checked + label.low {
+            background: #2ecc71;
+            border-color: #2ecc71;
+        }
+
+        .urgency-option input[type="radio"]:checked + label.medium {
+            background: #f39c12;
+            border-color: #f39c12;
+        }
+
+        .urgency-option input[type="radio"]:checked + label.high {
+            background: #e74c3c;
+            border-color: #e74c3c;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+            background: #ccc;
+        }
+
+        .success-message, .error-message {
+            padding: 15px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border-left: 4px solid #2ecc71;
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .screenshot-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 15px;
+            border-radius: var(--radius);
+            border: 2px solid #e1e8ed;
+            display: none;
+            transition: var(--transition);
+        }
+
+        .screenshot-preview.visible {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .admin-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+            transition: var(--transition);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .admin-link:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Floating animation for header */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .header h1 {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Floating labels for better mobile UX */
+        .floating-label {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .floating-label input,
+        .floating-label select,
+        .floating-label textarea {
+            padding-top: 20px;
+        }
+
+        .floating-label label {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #777;
+            transition: var(--transition);
+            pointer-events: none;
+        }
+
+        .floating-label input:focus + label,
+        .floating-label input:not(:placeholder-shown) + label,
+        .floating-label select:focus + label,
+        .floating-label select:not([value=""]) + label,
+        .floating-label textarea:focus + label,
+        .floating-label textarea:not(:placeholder-shown) + label {
+            top: 5px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header-logo {
+                height: 60px;
+            }
+            
+            .admin-link {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/admin" class="admin-link">
+        <i class="fas fa-tools"></i>
+        <span>Admin Panel</span>
+    </a>
+    
+    <div class="container">
+        <div class="header">
+            <img src="logo.png" alt="Company Logo" class="header-logo">
+            <h1><i class="fas fa-ticket-alt"></i> IT Support</h1>
+            <p>Submit your technical issues and we'll help you out!</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-message" id="successMessage"></div>
+            <div class="error-message" id="errorMessage"></div>
+            
+            <form id="ticketForm" enctype="multipart/form-data">
+                <div class="form-group floating-label">
+                    <input type="text" id="name" name="name" placeholder=" " required>
+                    <label for="name">Your Name</label>
+                </div>
+
+                <div class="form-group floating-label">
+                    <select id="location" name="location" required>
+                        <option value=""></option>
+                        <option value="Main Office - Downtown">Main Office - Downtown</option>
+                        <option value="Branch Office - North">Branch Office - North</option>
+                        <option value="Branch Office - South">Branch Office - South</option>
+                        <option value="Branch Office - East">Branch Office - East</option>
+                        <option value="Remote Office">Remote Office</option>
+                        <option value="Warehouse">Warehouse</option>
+                    </select>
+                    <label for="location">Office Location</label>
+                </div>
+
+                <div class="form-group floating-label">
+                    <select id="department" name="department" required>
+                        <option value=""></option>
+                        <option value="HR">Human Resources</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Security">Security</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Program">Program</option>
+                    </select>
+                    <label for="department">Department</label>
+                </div>
+
+                <div class="form-group floating-label">
+                    <textarea id="description" name="description" placeholder=" " required></textarea>
+                    <label for="description">Problem Description</label>
+                </div>
+
+                <div class="form-group">
+                    <label>Screenshot of the Problem</label>
+                    <div class="file-upload">
+                        <input type="file" id="screenshot" name="screenshot" accept="image/*">
+                        <label for="screenshot" class="file-upload-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Click to upload screenshot</span>
+                            <small>PNG, JPG, or GIF (Max 10MB)</small>
+                        </label>
+                    </div>
+                    <img id="imagePreview" class="screenshot-preview" alt="Screenshot preview">
+                </div>
+
+                <div class="form-group">
+                    <label>Urgency Level</label>
+                    <div class="urgency-grid">
+                        <div class="urgency-option">
+                            <input type="radio" id="low" name="urgency" value="Low" required>
+                            <label for="low" class="low">
+                                <i class="fas fa-check-circle"></i>
+                                Low
+                            </label>
+                        </div>
+                        <div class="urgency-option">
+                            <input type="radio" id="medium" name="urgency" value="Medium" required>
+                            <label for="medium" class="medium">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Medium
+                            </label>
+                        </div>
+                        <div class="urgency-option">
+                            <input type="radio" id="high" name="urgency" value="High" required>
+                            <label for="high" class="high">
+                                <i class="fas fa-fire"></i>
+                                High
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span id="submitText">Submit Ticket</span>
+                    <div class="spinner" id="spinner"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Form submission
+        document.getElementById('ticketForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const spinner = document.getElementById('spinner');
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            // Hide previous messages
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            // Show loading state
+            submitText.textContent = 'Submitting...';
+            spinner.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            try {
+                const formData = new FormData(this);
+                
+                const response = await fetch('/api/tickets', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    successMsg.innerHTML = `
+                        <i class="fas fa-check-circle"></i> 
+                        Your ticket has been submitted successfully! Our IT team will review it shortly.
+                    `;
+                    successMsg.style.display = 'block';
+                    
+                    // Reset form
+                    this.reset();
+                    document.getElementById('imagePreview').classList.remove('visible');
+                    
+                    // Hide success message after 5 seconds
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 5000);
+                } else {
+                    throw new Error(result.error || 'Failed to submit ticket');
+                }
+            } catch (error) {
+                console.error('Error submitting ticket:', error);
+                errorMsg.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i> 
+                    Error: ${error.message}
+                `;
+                errorMsg.style.display = 'block';
+                
+                // Scroll to error message
+                errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } finally {
+                // Reset button state
+                submitText.textContent = 'Submit Ticket';
+                spinner.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Image preview
+        document.getElementById('screenshot').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('imagePreview');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.add('visible');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.classList.remove('visible');
+            }
+        });
+
+        // Add floating label functionality for dynamic elements
+        document.querySelectorAll('.floating-label input, .floating-label select, .floating-label textarea').forEach(el => {
+            // Trigger the check on page load for prefilled fields
+            if (el.value) {
+                el.dispatchEvent(new Event('change'));
+            }
+            
+            // Add event listeners
+            el.addEventListener('change', function() {
+                const label = this.nextElementSibling;
+                if (this.value) {
+                    label.style.top = '5px';
+                    label.style.left = '10px';
+                    label.style.fontSize = '0.8rem';
+                    label.style.color = 'var(--primary)';
+                } else {
+                    label.style.top = '15px';
+                    label.style.left = '15px';
+                    label.style.fontSize = '1rem';
+                    label.style.color = '#777';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
