@@ -292,6 +292,29 @@ app.post('/api/tickets', async (req, res) => {
     res.status(500).json({ error: error.message || 'Failed to create ticket' });
   }
 });
+// WebSocket connection handler
+wss.on('connection', (ws) => {
+  console.log('New WebSocket connection');
+  
+  // Send current tickets to newly connected client
+  getAllTickets().then(tickets => {
+    ws.send(JSON.stringify({
+      type: 'INITIAL_TICKETS',
+      tickets: tickets
+    }));
+  }).catch(err => {
+    console.error('Error sending initial tickets:', err);
+  });
+
+  ws.on('close', () => console.log('WebSocket disconnected'));
+});
+
+// Add this to your existing WebSocket setup
+wss.on('error', (error) => {
+  console.error('WebSocket error:', error);
+});
+
+
 // Start server
 async function startServer() {
   await initializeStorage();
