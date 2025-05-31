@@ -1024,6 +1024,8 @@ width: auto; /* Allow natural width */
 
 #enableAudioBtn.enabled span:first-child {
   content: "🔔";
+    color: white;
+
 }
 
     </style>
@@ -1109,548 +1111,611 @@ width: auto; /* Allow natural width */
         </div>
     </div>
 <audio id="notificationSound" src="/audio.mp3" preload="auto"></audio>
-  <script>
-        // Enhanced IT Support Admin Panel Script
-        let tickets = [];
-        let currentFilters = {
+<script>
+    // Enhanced IT Support Admin Panel Script
+    let tickets = [];
+    let currentFilters = {
+        searchQuery: '',
+        status: '',
+        urgency: ''
+    };
+    
+    // Polling interval for updates (in milliseconds)
+    const POLL_INTERVAL = 5000; // 5 seconds
+    let pollIntervalId;
+    let lastTicketCount = 0;
+    let audioEnabled = false;
+    let notificationSound;
+
+    // Load tickets when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize audio
+        notificationSound = document.getElementById('notificationSound');
+        
+        // Set up enable audio button
+        document.getElementById('enableAudioBtn').addEventListener('click', enableAudioNotifications);
+        
+        // Load initial tickets
+        loadTickets();
+        
+        // Set up polling for updates
+        pollIntervalId = setInterval(loadTickets, POLL_INTERVAL);
+        
+        // Add event listener for escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    });
+
+    function enableAudioNotifications() {
+        audioEnabled = true;
+        const btn = document.getElementById('enableAudioBtn');
+        btn.innerHTML = '<i class="fas fa-bell"></i><span></span>';
+        btn.classList.add('enabled');
+        
+        // Play a test sound to confirm it works
+        notificationSound.play().catch(error => {
+            console.error('Error playing notification sound:', error);
+            showNotification({
+                title: 'Audio Error',
+                message: 'Please interact with the page first or check browser permissions for sound.',
+                type: 'error',
+                autoClose: 5000
+            });
+        });
+    }
+
+    // Load tickets from server
+    async function loadTickets() {
+        const container = document.getElementById('ticketsContainer');
+        const errorMsg = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        try {
+            // Show loading state only if we don't have any tickets yet
+            if (tickets.length === 0) {
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading tickets...</p>
+                    </div>
+                `;
+            }
+            
+            errorMsg.style.display = 'none';
+            
+            // Fetch tickets from API
+            const response = await fetch('/api/tickets');
+            
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status} ${response.statusText}`);
+            }
+            
+            const newTickets = await response.json();
+            
+            // Check if tickets have changed
+            if (JSON.stringify(tickets) !== JSON.stringify(newTickets)) {
+                // Check for new tickets if we already had some
+                if (tickets.length > 0 && newTickets.length > tickets.length) {
+                    const newTicketIds = newTickets.map(t => t.id);
+                    const oldTicketIds = tickets.map(t => t.id);
+                    const addedTickets = newTickets.filter(t => !oldTicketIds.includes(t.id));
+                    
+                    // Show notification for each new ticket
+                    if (addedTickets.length > 0) {
+                        addedTickets.forEach(ticket => {
+                            showNewTicketNotification(ticket);
+                            // Play sound if enabled
+                            if (audioEnabled) {
+                                notificationSound.play().catch(error => {
+                                    console.error('Error playing notification sound:', error);
+                                });
+                            }
+                        });
+                    }
+                }
+                
+                tickets = newTickets;
+                tickets.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                applyFilters();
+                updateStats();
+            }
+            
+        } catch (error) {
+            console.error('Error loading tickets:', error);
+            errorText.textContent = `Error loading tickets: ${error.message}`;
+            errorMsg.style.display = 'flex';
+            container.innerHTML = `
+                <div class="no-tickets">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Failed to load tickets</p>
+                    <button class="refresh-btn" onclick="loadTickets()" style="margin-top: 1rem;">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Retry</span>
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Show notification for new ticket
+    function showNewTicketNotification(ticket) {
+        const urgencyClass = `notification-urgency-${ticket.urgency.toLowerCase()}`;
+        const urgencyIcon = ticket.urgency === 'High' ? 'fas fa-exclamation-circle' : 
+                          ticket.urgency === 'Medium' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
+        
+        showNotification({
+            title: 'New Ticket Created',
+            message: `
+                <strong>#${ticket.id}</strong> - ${ticket.name}<br>
+                <small>${ticket.location} • ${ticket.department}</small><br><br>
+                <span class="notification-urgency ${urgencyClass}">
+                    <i class="${urgencyIcon}"></i> ${ticket.urgency} Priority
+                </span>
+            `,
+            type: 'info',
+            autoClose: 10000
+        });
+    }
+
+    // Handle search input with debounce
+    let searchTimeout;
+    function handleSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentFilters.searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            applyFilters();
+        }, 300);
+    }
+
+    // Apply all active filters
+    function applyFilters() {
+        try {
+            currentFilters.status = document.getElementById('statusFilter').value;
+            currentFilters.urgency = document.getElementById('urgencyFilter').value;
+            
+            let filteredTickets = [...tickets];
+            
+            // Apply search filter
+            if (currentFilters.searchQuery) {
+                filteredTickets = filteredTickets.filter(ticket => 
+                    ticket.name.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.location.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.department.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.description.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.id.toString().includes(currentFilters.searchQuery)
+                );
+            }
+            
+            // Apply status filter
+            if (currentFilters.status) {
+                filteredTickets = filteredTickets.filter(ticket => 
+                    ticket.status === currentFilters.status
+                );
+            }
+            
+            // Apply urgency filter
+            if (currentFilters.urgency) {
+                filteredTickets = filteredTickets.filter(ticket => 
+                    ticket.urgency === currentFilters.urgency
+                );
+            }
+            
+            renderTickets(filteredTickets);
+            
+        } catch (error) {
+            console.error('Error applying filters:', error);
+            const errorMsg = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = 'Error applying filters: ' + error.message;
+            errorMsg.style.display = 'flex';
+        }
+    }
+
+    // Clear all filters
+    function clearFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('urgencyFilter').value = '';
+        
+        currentFilters = {
             searchQuery: '',
             status: '',
             urgency: ''
         };
         
-        // Polling interval for updates (in milliseconds)
-        const POLL_INTERVAL = 5000; // 5 seconds
-        let pollIntervalId;
+        renderTickets(tickets);
+    }
 
-        // Load tickets when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load initial tickets
-            loadTickets();
-            
-            // Set up polling for updates
-            pollIntervalId = setInterval(loadTickets, POLL_INTERVAL);
-            
-            // Add event listener for escape key to close modal
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    closeImageModal();
-                }
-            });
-        });
-
-        // Load tickets from server
-        async function loadTickets() {
-            const container = document.getElementById('ticketsContainer');
-            const errorMsg = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            
-            try {
-                // Show loading state only if we don't have any tickets yet
-                if (tickets.length === 0) {
-                    container.innerHTML = `
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>Loading tickets...</p>
-                        </div>
-                    `;
-                }
-                
-                errorMsg.style.display = 'none';
-                
-                // Fetch tickets from API
-                const response = await fetch('/api/tickets');
-                
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status} ${response.statusText}`);
-                }
-                
-                const newTickets = await response.json();
-                
-                // Check if tickets have changed
-                if (JSON.stringify(tickets) !== JSON.stringify(newTickets)) {
-                    tickets = newTickets;
-                    
-                    // Sort tickets by timestamp (newest first)
-                    tickets.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    
-                    // Update UI
-                    applyFilters();
-                    updateStats();
-                }
-                
-            } catch (error) {
-                console.error('Error loading tickets:', error);
-                errorText.textContent = `Error loading tickets: ${error.message}`;
-                errorMsg.style.display = 'flex';
-                container.innerHTML = `
-                    <div class="no-tickets">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Failed to load tickets</p>
-                        <button class="refresh-btn" onclick="loadTickets()" style="margin-top: 1rem;">
-                            <i class="fas fa-sync-alt"></i>
-                            <span>Retry</span>
-                        </button>
-                    </div>
-                `;
-            }
-        }
-
-        // Handle search input with debounce
-        let searchTimeout;
-        function handleSearch() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                currentFilters.searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
-                applyFilters();
-            }, 300);
-        }
-
-        // Apply all active filters
-        function applyFilters() {
-            try {
-                currentFilters.status = document.getElementById('statusFilter').value;
-                currentFilters.urgency = document.getElementById('urgencyFilter').value;
-                
-                let filteredTickets = [...tickets];
-                
-                // Apply search filter
-                if (currentFilters.searchQuery) {
-                    filteredTickets = filteredTickets.filter(ticket => 
-                        ticket.name.toLowerCase().includes(currentFilters.searchQuery) ||
-                        ticket.location.toLowerCase().includes(currentFilters.searchQuery) ||
-                        ticket.department.toLowerCase().includes(currentFilters.searchQuery) ||
-                        ticket.description.toLowerCase().includes(currentFilters.searchQuery) ||
-                        ticket.id.toString().includes(currentFilters.searchQuery)
-                    );
-                }
-                
-                // Apply status filter
-                if (currentFilters.status) {
-                    filteredTickets = filteredTickets.filter(ticket => 
-                        ticket.status === currentFilters.status
-                    );
-                }
-                
-                // Apply urgency filter
-                if (currentFilters.urgency) {
-                    filteredTickets = filteredTickets.filter(ticket => 
-                        ticket.urgency === currentFilters.urgency
-                    );
-                }
-                
-                renderTickets(filteredTickets);
-                
-            } catch (error) {
-                console.error('Error applying filters:', error);
-                const errorMsg = document.getElementById('errorMessage');
-                const errorText = document.getElementById('errorText');
-                errorText.textContent = 'Error applying filters: ' + error.message;
-                errorMsg.style.display = 'flex';
-            }
-        }
-
-        // Clear all filters
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('statusFilter').value = '';
-            document.getElementById('urgencyFilter').value = '';
-            
-            currentFilters = {
-                searchQuery: '',
-                status: '',
-                urgency: ''
-            };
-            
-            renderTickets(tickets);
-        }
-
-        // Render tickets in the UI
-        function renderTickets(ticketsToRender) {
-            const container = document.getElementById('ticketsContainer');
-            
-            if (ticketsToRender.length === 0) {
-                container.innerHTML = `
-                    <div class="no-tickets">
-                        <i class="fas fa-inbox"></i>
-                        <p>No tickets match your criteria</p>
-                        <button class="clear-filters" onclick="clearFilters()" style="margin-top: 1rem;">
-                            <i class="fas fa-times"></i>
-                            <span>Clear Filters</span>
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-            
+    // Render tickets in the UI
+    function renderTickets(ticketsToRender) {
+        const container = document.getElementById('ticketsContainer');
+        
+        if (ticketsToRender.length === 0) {
             container.innerHTML = `
-                <div class="tickets-grid">
-                    ${ticketsToRender.map(ticket => `
-                        <div class="ticket-card fade-in">
-                            <div class="ticket-header">
-                                <span class="ticket-id" data-id="${ticket.id}">
-                                    <i class="fas fa-hashtag"></i> ${ticket.id} - ${ticket.name}
-                                </span>
-                                <span class="status-badge status-${ticket.status.toLowerCase().replace(' ', '-')}">
-                                    <i class="fas ${getStatusIcon(ticket.status)}"></i>
-                                    ${ticket.status}
-                                </span>
-                            </div>
-                            
-                            <div class="ticket-info">
-                                <div class="info-item">
-                                    <span class="info-label">
-                                        <i class="fas fa-map-marker-alt"></i> Location
-                                    </span>
-                                    <span class="info-value">${ticket.location}</span>
-                                </div>
-
-                                <div class="info-item">
-                                    <span class="info-label">
-                                        <i class="fas fa-building"></i> Department
-                                    </span>
-                                    <span class="info-value">${ticket.department}</span>
-                                </div>
-
-                                <div class="info-item">
-                                    <span class="info-label">
-                                        <i class="fas fa-bolt"></i> Urgency
-                                    </span>
-                                    <span class="info-value urgency-${ticket.urgency.toLowerCase()}">
-                                        <i class="fas ${getUrgencyIcon(ticket.urgency)}"></i> ${ticket.urgency}
-                                    </span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">
-                                        <i class="far fa-clock"></i> Submitted
-                                    </span>
-                                    <span class="info-value">${formatDate(ticket.timestamp)}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="description-box">
-                                <div class="description-header" onclick="toggleDescription(this)">
-                                    <div class="info-label">
-                                        <i class="fas fa-align-left"></i> Issue Description
-                                        <i class="fas fa-chevron-down description-toggle"></i>
-                                    </div>
-                                </div>
-                                <div class="description-content">
-                                    <div class="description-text">${ticket.description}</div>
-                                </div>
-                            </div>
-                            
-                            ${ticket.screenshot ? `
-                                <div class="screenshot-container">
-                                    <div class="info-label">
-                                        <i class="fas fa-camera"></i> Screenshot
-                                    </div>
-                                    <img src="${ticket.screenshot}" class="screenshot-preview" 
-                                         alt="Screenshot for ticket #${ticket.id}" 
-                                         onclick="openImageModal('${ticket.screenshot}')">
-                                </div>
-                            ` : ''}
-                            
-                            <div class="ticket-actions">
-                                <select class="status-select" onchange="updateTicketStatus(${ticket.id}, this.value)" 
-                                        aria-label="Change ticket status">
-                                    <option value="Not Checked" ${ticket.status === 'Not Checked' ? 'selected' : ''}>
-                                        Not Checked
-                                    </option>
-                                    <option value="In Progress" ${ticket.status === 'In Progress' ? 'selected' : ''}>
-                                        In Progress
-                                    </option>
-                                    <option value="Solved" ${ticket.status === 'Solved' ? 'selected' : ''}>
-                                        Solved
-                                    </option>
-                                </select>
-                                <button class="btn-delete" onclick="deleteTicket(${ticket.id})" 
-                                        aria-label="Delete ticket">
-                                    <i class="fas fa-trash-alt"></i>
-                                    <span>Delete</span>
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        // Toggle description box
-        function toggleDescription(element) {
-            const descriptionBox = element.closest('.description-box');
-            descriptionBox.classList.toggle('expanded');
-        }
-
-        // Get icon for status
-        function getStatusIcon(status) {
-            switch(status) {
-                case 'Not Checked': return 'fa-hourglass-start';
-                case 'In Progress': return 'fa-spinner fa-pulse';
-                case 'Solved': return 'fa-check-circle';
-                default: return 'fa-ticket-alt';
-            }
-        }
-
-        // Get icon for urgency
-        function getUrgencyIcon(urgency) {
-            switch(urgency) {
-                case 'High': return 'fa-exclamation-circle';
-                case 'Medium': return 'fa-exclamation-triangle';
-                case 'Low': return 'fa-info-circle';
-                default: return 'fa-question-circle';
-            }
-        }
-
-        // Update statistics
-        function updateStats() {
-            const stats = {
-                total: tickets.length,
-                notChecked: tickets.filter(t => t.status === 'Not Checked').length,
-                inProgress: tickets.filter(t => t.status === 'In Progress').length,
-                solved: tickets.filter(t => t.status === 'Solved').length
-            };
-            
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-number total">${stats.total}</div>
-                    <div class="stat-label">
-                        <i class="fas fa-ticket-alt"></i> Total Tickets
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number not-checked">${stats.notChecked}</div>
-                    <div class="stat-label">
-                        <i class="fas fa-hourglass-start"></i> Not Checked
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number in-progress">${stats.inProgress}</div>
-                    <div class="stat-label">
-                        <i class="fas fa-spinner"></i> In Progress
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number solved">${stats.solved}</div>
-                    <div class="stat-label">
-                        <i class="fas fa-check-circle"></i> Solved
-                    </div>
-                </div>
-            `;
-        }
-
-        // Update ticket status
-        async function updateTicketStatus(ticketId, newStatus) {
-            try {
-                const response = await fetch(`/api/tickets/${ticketId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ status: newStatus })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to update ticket status: ${response.status} ${response.statusText}`);
-                }
-                
-                // Update the local tickets array
-                const updatedTicket = await response.json();
-                const ticketIndex = tickets.findIndex(t => t.id === ticketId);
-                if (ticketIndex !== -1) {
-                    tickets[ticketIndex] = updatedTicket.ticket;
-                }
-                
-                // Show success notification
-                showNotification({
-                    title: 'Status Updated',
-                    message: `Ticket #${ticketId} is now marked as "${newStatus}"`,
-                    type: 'success',
-                    autoClose: 3000
-                });
-                
-                // Re-render with current filters
-                applyFilters();
-                updateStats();
-                
-            } catch (error) {
-                console.error('Error updating ticket:', error);
-                
-                // Show error notification
-                showNotification({
-                    title: 'Update Failed',
-                    message: `Error updating ticket #${ticketId}: ${error.message}`,
-                    type: 'error',
-                    autoClose: 5000
-                });
-                
-                // Reload to reset the dropdown
-                loadTickets();
-            }
-        }
-
-        // Delete ticket
-        async function deleteTicket(ticketId) {
-            if (!confirm(`Are you sure you want to delete ticket #${ticketId}? This action cannot be undone.`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/tickets/${ticketId}`, {
-                    method: 'DELETE'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to delete ticket: ${response.status} ${response.statusText}`);
-                }
-                
-                // Remove from local tickets array
-                tickets = tickets.filter(t => t.id !== ticketId);
-                
-                // Show success notification
-                showNotification({
-                    title: 'Ticket Deleted',
-                    message: `Ticket #${ticketId} has been successfully deleted`,
-                    type: 'success',
-                    autoClose: 3000
-                });
-                
-                // Re-render with current filters
-                applyFilters();
-                updateStats();
-                
-            } catch (error) {
-                console.error('Error deleting ticket:', error);
-                
-                // Show error notification
-                showNotification({
-                    title: 'Deletion Failed',
-                    message: `Error deleting ticket #${ticketId}: ${error.message}`,
-                    type: 'error',
-                    autoClose: 5000
-                });
-            }
-        }
-
-        // Format date for display
-        function formatDate(timestamp) {
-            const date = new Date(timestamp);
-            const now = new Date();
-            const diffInHours = Math.abs(now - date) / 36e5;
-            
-            // If within 24 hours, show relative time
-            if (diffInHours < 24) {
-                const diffInMinutes = Math.round(diffInHours * 60);
-                if (diffInMinutes < 1) return 'Just now';
-                if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
-                return `${Math.floor(diffInHours)} hour${Math.floor(diffInHours) === 1 ? '' : 's'} ago`;
-            }
-            
-            // Otherwise show full date
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        // Open image in modal
-        function openImageModal(imageSrc) {
-            const modal = document.getElementById('imageModal');
-            const modalImage = document.getElementById('modalImage');
-            
-            modalImage.src = imageSrc;
-            modalImage.alt = `Screenshot for ticket`;
-            
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        // Close image modal
-        function closeImageModal() {
-            const modal = document.getElementById('imageModal');
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-
-        // Show a notification
-        function showNotification({ title, message, type = 'info', autoClose = 5000 }) {
-            const container = document.getElementById('notificationContainer');
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            
-            // Set icon and color based on type
-            let icon, color;
-            switch (type) {
-                case 'success':
-                    icon = 'fas fa-check-circle';
-                    color = 'var(--success-color)';
-                    break;
-                case 'warning':
-                    icon = 'fas fa-exclamation-triangle';
-                    color = 'var(--warning-color)';
-                    break;
-                case 'error':
-                    icon = 'fas fa-times-circle';
-                    color = 'var(--danger-color)';
-                    break;
-                default:
-                    icon = 'fas fa-info-circle';
-                    color = 'var(--info-color)';
-            }
-            
-            notification.innerHTML = `
-                <div class="notification-header">
-                    <span class="notification-title" style="color: ${color}">
-                        <i class="${icon}"></i> ${title}
-                    </span>
-                    <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                <div class="no-tickets">
+                    <i class="fas fa-inbox"></i>
+                    <p>No tickets match your criteria</p>
+                    <button class="clear-filters" onclick="clearFilters()" style="margin-top: 1rem;">
                         <i class="fas fa-times"></i>
+                        <span>Clear Filters</span>
                     </button>
                 </div>
-                <div class="notification-body">
-                    ${message}
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="tickets-grid">
+                ${ticketsToRender.map(ticket => `
+                    <div class="ticket-card fade-in">
+                        <div class="ticket-header">
+                            <span class="ticket-id" data-id="${ticket.id}">
+                                <i class="fas fa-hashtag"></i> ${ticket.id} - ${ticket.name}
+                            </span>
+                            <span class="status-badge status-${ticket.status.toLowerCase().replace(' ', '-')}">
+                                <i class="fas ${getStatusIcon(ticket.status)}"></i>
+                                ${ticket.status}
+                            </span>
+                        </div>
+                        
+                        <div class="ticket-info">
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-map-marker-alt"></i> Location
+                                </span>
+                                <span class="info-value">${ticket.location}</span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-building"></i> Department
+                                </span>
+                                <span class="info-value">${ticket.department}</span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-bolt"></i> Urgency
+                                </span>
+                                <span class="info-value urgency-${ticket.urgency.toLowerCase()}">
+                                    <i class="fas ${getUrgencyIcon(ticket.urgency)}"></i> ${ticket.urgency}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="far fa-clock"></i> Submitted
+                                </span>
+                                <span class="info-value">${formatDate(ticket.timestamp)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="description-box">
+                            <div class="description-header" onclick="toggleDescription(this)">
+                                <div class="info-label">
+                                    <i class="fas fa-align-left"></i> Issue Description
+                                    <i class="fas fa-chevron-down description-toggle"></i>
+                                </div>
+                            </div>
+                            <div class="description-content">
+                                <div class="description-text">${ticket.description}</div>
+                            </div>
+                        </div>
+                        
+                        ${ticket.screenshot ? `
+                            <div class="screenshot-container">
+                                <div class="info-label">
+                                    <i class="fas fa-camera"></i> Screenshot
+                                </div>
+                                <img src="${ticket.screenshot}" class="screenshot-preview" 
+                                     alt="Screenshot for ticket #${ticket.id}" 
+                                     onclick="openImageModal('${ticket.screenshot}')">
+                            </div>
+                        ` : ''}
+                        
+                        <div class="ticket-actions">
+                            <select class="status-select" onchange="updateTicketStatus(${ticket.id}, this.value)" 
+                                    aria-label="Change ticket status">
+                                <option value="Not Checked" ${ticket.status === 'Not Checked' ? 'selected' : ''}>
+                                    Not Checked
+                                </option>
+                                <option value="In Progress" ${ticket.status === 'In Progress' ? 'selected' : ''}>
+                                    In Progress
+                                </option>
+                                <option value="Solved" ${ticket.status === 'Solved' ? 'selected' : ''}>
+                                    Solved
+                                </option>
+                            </select>
+                            <button class="btn-delete" onclick="deleteTicket(${ticket.id})" 
+                                    aria-label="Delete ticket">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // Toggle description box
+    function toggleDescription(element) {
+        const descriptionBox = element.closest('.description-box');
+        descriptionBox.classList.toggle('expanded');
+    }
+
+    // Get icon for status
+    function getStatusIcon(status) {
+        switch(status) {
+            case 'Not Checked': return 'fa-hourglass-start';
+            case 'In Progress': return 'fa-spinner fa-pulse';
+            case 'Solved': return 'fa-check-circle';
+            default: return 'fa-ticket-alt';
+        }
+    }
+
+    // Get icon for urgency
+    function getUrgencyIcon(urgency) {
+        switch(urgency) {
+            case 'High': return 'fa-exclamation-circle';
+            case 'Medium': return 'fa-exclamation-triangle';
+            case 'Low': return 'fa-info-circle';
+            default: return 'fa-question-circle';
+        }
+    }
+
+    // Update statistics
+    function updateStats() {
+        const stats = {
+            total: tickets.length,
+            notChecked: tickets.filter(t => t.status === 'Not Checked').length,
+            inProgress: tickets.filter(t => t.status === 'In Progress').length,
+            solved: tickets.filter(t => t.status === 'Solved').length
+        };
+        
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-number total">${stats.total}</div>
+                <div class="stat-label">
+                    <i class="fas fa-ticket-alt"></i> Total Tickets
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number not-checked">${stats.notChecked}</div>
+                <div class="stat-label">
+                    <i class="fas fa-hourglass-start"></i> Not Checked
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number in-progress">${stats.inProgress}</div>
+                <div class="stat-label">
+                    <i class="fas fa-spinner"></i> In Progress
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number solved">${stats.solved}</div>
+                <div class="stat-label">
+                    <i class="fas fa-check-circle"></i> Solved
+                </div>
+            </div>
+        `;
+    }
+
+    // Update ticket status
+    async function updateTicketStatus(ticketId, newStatus) {
+        try {
+            const response = await fetch(`/api/tickets/${ticketId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to update ticket status: ${response.status} ${response.statusText}`);
+            }
+            
+            // Update the local tickets array
+            const updatedTicket = await response.json();
+            const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+            if (ticketIndex !== -1) {
+                tickets[ticketIndex] = updatedTicket.ticket;
+            }
+            
+            // Show success notification
+            showNotification({
+                title: 'Status Updated',
+                message: `Ticket #${ticketId} is now marked as "${newStatus}"`,
+                type: 'success',
+                autoClose: 3000
+            });
+            
+            // Re-render with current filters
+            applyFilters();
+            updateStats();
+            
+        } catch (error) {
+            console.error('Error updating ticket:', error);
+            
+            // Show error notification
+            showNotification({
+                title: 'Update Failed',
+                message: `Error updating ticket #${ticketId}: ${error.message}`,
+                type: 'error',
+                autoClose: 5000
+            });
+            
+            // Reload to reset the dropdown
+            loadTickets();
+        }
+    }
+
+    // Delete ticket
+    async function deleteTicket(ticketId) {
+        if (!confirm(`Are you sure you want to delete ticket #${ticketId}? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/tickets/${ticketId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to delete ticket: ${response.status} ${response.statusText}`);
+            }
+            
+            // Remove from local tickets array
+            tickets = tickets.filter(t => t.id !== ticketId);
+            
+            // Show success notification
+            showNotification({
+                title: 'Ticket Deleted',
+                message: `Ticket #${ticketId} has been successfully deleted`,
+                type: 'success',
+                autoClose: 3000
+            });
+            
+            // Re-render with current filters
+            applyFilters();
+            updateStats();
+            
+        } catch (error) {
+            console.error('Error deleting ticket:', error);
+            
+            // Show error notification
+            showNotification({
+                title: 'Deletion Failed',
+                message: `Error deleting ticket #${ticketId}: ${error.message}`,
+                type: 'error',
+                autoClose: 5000
+            });
+        }
+    }
+
+    // Format date for display
+    function formatDate(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffInHours = Math.abs(now - date) / 36e5;
+        
+        // If within 24 hours, show relative time
+        if (diffInHours < 24) {
+            const diffInMinutes = Math.round(diffInHours * 60);
+            if (diffInMinutes < 1) return 'Just now';
+            if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+            return `${Math.floor(diffInHours)} hour${Math.floor(diffInHours) === 1 ? '' : 's'} ago`;
+        }
+        
+        // Otherwise show full date
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Open image in modal
+    function openImageModal(imageSrc) {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        
+        modalImage.src = imageSrc;
+        modalImage.alt = `Screenshot for ticket`;
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close image modal
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Show a notification
+    function showNotification({ title, message, type = 'info', autoClose = 5000 }) {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        
+        // Set icon and color based on type
+        let icon, color;
+        switch (type) {
+            case 'success':
+                icon = 'fas fa-check-circle';
+                color = 'var(--success-color)';
+                break;
+            case 'warning':
+                icon = 'fas fa-exclamation-triangle';
+                color = 'var(--warning-color)';
+                break;
+            case 'error':
+                icon = 'fas fa-times-circle';
+                color = 'var(--danger-color)';
+                break;
+            default:
+                icon = 'fas fa-info-circle';
+                color = 'var(--info-color)';
+        }
+        
+        notification.innerHTML = `
+            <div class="notification-header">
+                <span class="notification-title" style="color: ${color}">
+                    <i class="${icon}"></i> ${title}
+                </span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="notification-body">
+                ${message}
+            </div>
+        `;
+        
+        if (autoClose) {
+            notification.innerHTML += `
+                <div class="notification-footer">
+                    <small>${new Date().toLocaleTimeString()}</small>
+                    <div class="progress-bar" style="height: 3px; background: rgba(0,0,0,0.1); width: 100%; margin-top: 0.5rem;">
+                        <div class="progress-fill" style="height: 100%; background: ${color}; width: 100%; animation: progress ${autoClose}ms linear forwards;"></div>
+                    </div>
                 </div>
             `;
             
-            if (autoClose) {
-                notification.innerHTML += `
-                    <div class="notification-footer">
-                        <small>${new Date().toLocaleTimeString()}</small>
-                        <div class="progress-bar" style="height: 3px; background: rgba(0,0,0,0.1); width: 100%; margin-top: 0.5rem;">
-                            <div class="progress-fill" style="height: 100%; background: ${color}; width: 100%; animation: progress ${autoClose}ms linear forwards;"></div>
-                        </div>
-                    </div>
-                `;
-                
-                // Add CSS for progress animation
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes progress {
-                        from { width: 100%; }
-                        to { width: 0%; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            container.prepend(notification);
-            
-            // Show the notification with animation
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 10);
-            
-            // Auto-remove if autoClose is set
-            if (autoClose) {
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 300);
-                }, autoClose);
-            }
+            // Add CSS for progress animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes progress {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                }
+            `;
+            document.head.appendChild(style);
         }
-    </script></body>
+        
+        container.prepend(notification);
+        
+        // Show the notification with animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        // Auto-remove if autoClose is set
+        if (autoClose) {
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, autoClose);
+        }
+    }
+</script></body>
 </html>
