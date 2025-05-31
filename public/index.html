@@ -449,6 +449,7 @@
     </style>
 </head>
 <body>
+
     
     <div class="container">
         <div class="header">
@@ -492,10 +493,14 @@
                     <label for="department">Department</label>
                 </div>
 
-                <div class="form-group floating-label">
-                    <textarea id="description" name="description" placeholder=" " required></textarea>
-                    <label for="description">Problem Description</label>
-                </div>
+<div class="form-group floating-label">
+    <textarea id="description" name="description" placeholder=" " 
+              maxlength="1000" required></textarea>
+    <label for="description">Problem Description</label>
+    <div class="char-counter" style="text-align: right; font-size: 0.8rem; color: var(--gray);">
+        <span id="charCount">0</span>/1000 characters
+    </div>
+</div>
 
                 <div class="form-group">
                     <label>Screenshot of the Problem</label>
@@ -546,6 +551,23 @@
     </div>
 
     <script>
+// Character counter for description
+const descriptionField = document.getElementById('description');
+const charCount = document.getElementById('charCount');
+
+descriptionField.addEventListener('input', function() {
+    const currentLength = this.value.length;
+    charCount.textContent = currentLength;
+    
+    // Optional: Change color when approaching limit
+    if (currentLength > 900) {
+        charCount.style.color = 'var(--warning)';
+    } else if (currentLength > 950) {
+        charCount.style.color = 'var(--danger)';
+    } else {
+        charCount.style.color = 'var(--gray)';
+    }
+});
         // Form submission
         document.getElementById('ticketForm').addEventListener('submit', async function(e) {
             e.preventDefault();
