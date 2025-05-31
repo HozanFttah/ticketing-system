@@ -5,11 +5,10 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const multiparty = require('multiparty');
 const { createClient } = require('@supabase/supabase-js');
-const WebSocket = require('ws');
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl = 'https://ysdtxbipmslwjitdidez.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzZHR4YmlwbXNsd2ppdGRpZGV6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODQyMjM3NywiZXhwIjoyMDYzOTk4Mzc3fQ.11uriA-UP-8_6mWYHTf3jBp1QBTzf98Y_fvTqVEEXOE';
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false }
@@ -22,11 +21,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-
-
-
-
-
 
 // DB functions
 async function getAllTickets() {
@@ -64,7 +58,6 @@ async function updateTicketStatus(id, status) {
       .from('tickets')
       .update({ 
         status: status
-        // Remove updated_at from here
       })
       .eq('id', id)
       .select();
@@ -178,18 +171,11 @@ app.get('/api/tickets', async (req, res) => {
   }
 });
 
-
 app.delete('/api/tickets/:id', async (req, res) => {
   try {
     const { id } = req.params;
     await deleteTicket(id);
     res.json({ success: true });
-    
-    // Notify WebSocket clients
-    req.app.locals.wss.broadcast(JSON.stringify({
-      type: 'TICKET_DELETED',
-      id: id
-    }));
   } catch (error) {
     console.error('Error deleting ticket:', error);
     res.status(500).json({ 
@@ -198,7 +184,6 @@ app.delete('/api/tickets/:id', async (req, res) => {
     });
   }
 });
-
 
 app.patch('/api/tickets/:id', async (req, res) => {
   try {
@@ -216,20 +201,10 @@ app.patch('/api/tickets/:id', async (req, res) => {
     console.error('Route error:', error);
     res.status(500).json({ 
       error: error.message || 'Failed to update ticket status',
-      details: error.details // Supabase often provides additional error details
+      details: error.details
     });
   }
 });
-
-
-
-
-
-
-
-
-
-
 
 app.post('/api/tickets', async (req, res) => {
   try {
@@ -248,7 +223,6 @@ app.post('/api/tickets', async (req, res) => {
       const fileExt = path.extname(file.originalFilename);
       const fileName = `screenshot-${Date.now()}${fileExt}`;
 
-      // Solution 1: Read file into buffer
       const fileBuffer = await fsp.readFile(file.path);
       
       const { data, error } = await supabase.storage
@@ -256,7 +230,7 @@ app.post('/api/tickets', async (req, res) => {
         .upload(fileName, fileBuffer, {
           contentType: file.headers['content-type'],
           upsert: false,
-          duplex: 'half' // Required for Node.js 18+
+          duplex: 'half'
         });
 
       if (error) throw error;
@@ -280,65 +254,20 @@ app.post('/api/tickets', async (req, res) => {
     };
 
     const createdTicket = await createTicket(newTicket);
-    
-    req.app.locals.wss.broadcast(JSON.stringify({
-      type: 'NEW_TICKET',
-      ticket: createdTicket
-    }));
-    
     res.json({ success: true, ticket: createdTicket });
   } catch (error) {
     console.error('Error creating ticket:', error);
     res.status(500).json({ error: error.message || 'Failed to create ticket' });
   }
 });
-// WebSocket connection handler
-wss.on('connection', (ws) => {
-  console.log('New WebSocket connection');
-  
-  // Send current tickets to newly connected client
-  getAllTickets().then(tickets => {
-    ws.send(JSON.stringify({
-      type: 'INITIAL_TICKETS',
-      tickets: tickets
-    }));
-  }).catch(err => {
-    console.error('Error sending initial tickets:', err);
-  });
-
-  ws.on('close', () => console.log('WebSocket disconnected'));
-});
-
-// Add this to your existing WebSocket setup
-wss.on('error', (error) => {
-  console.error('WebSocket error:', error);
-});
-
 
 // Start server
 async function startServer() {
   await initializeStorage();
 
-  const server = app.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📊 Admin panel: http://localhost:${PORT}/admin`);
-  });
-
-  // WebSocket setup
-  const wss = new WebSocket.Server({ server });
-  app.locals.wss = wss;
-
-  wss.broadcast = function (data) {
-    wss.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data);
-      }
-    });
-  };
-
-  wss.on('connection', (ws) => {
-    console.log('New WebSocket connection');
-    ws.on('close', () => console.log('WebSocket disconnected'));
   });
 }
 
