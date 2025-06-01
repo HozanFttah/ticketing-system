@@ -163,6 +163,20 @@
             resize: vertical;
         }
 
+/* Add to your existing CSS */
+textarea {
+    text-align: start; /* Allows natural alignment based on text direction */
+    line-height: 1.8; /* Improved line spacing for mixed scripts */
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif, 'Segoe UI Arabic', 'Arial Unicode MS';
+    unicode-bidi: plaintext; /* Handles bidirectional text properly */
+}
+
+/* For RTL text specifically */
+textarea[dir="rtl"] {
+    text-align: right;
+    font-family: 'Segoe UI Arabic', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+}
+
         .file-upload {
             position: relative;
             display: inline-block;
@@ -495,9 +509,9 @@
 
 <div class="form-group floating-label">
     <textarea id="description" name="description" placeholder=" " 
-              maxlength="1000" required></textarea>
+              maxlength="1000" required dir="auto"></textarea>
     <label for="description">Problem Description</label>
-    <div class="char-counter" style="text-align: right; font-size: 0.8rem; color: var(--gray);">
+    <div class="char-counter" style="text-align: right; font-size: 0.8rem; color: #777;">
         <span id="charCount">0</span>/1000 characters
     </div>
 </div>
@@ -568,6 +582,34 @@ descriptionField.addEventListener('input', function() {
         charCount.style.color = 'var(--gray)';
     }
 });
+
+// Add this to your existing script
+descriptionField.addEventListener('input', function() {
+    const currentLength = this.value.length;
+    charCount.textContent = currentLength;
+    
+    // Detect if Arabic text is being entered
+    const arabicRegex = /[\u0600-\u06FF]/;
+    if (arabicRegex.test(this.value)) {
+        this.style.textAlign = 'right';
+        this.style.fontFamily = "'Segoe UI Arabic', 'Arial Unicode MS', sans-serif";
+    } else {
+        this.style.textAlign = 'left';
+        this.style.fontFamily = "'Segoe UI', system-ui, sans-serif";
+    }
+    
+    // Optional: Change color when approaching limit
+    if (currentLength > 900) {
+        charCount.style.color = 'var(--warning)';
+    } else if (currentLength > 950) {
+        charCount.style.color = 'var(--danger)';
+    } else {
+        charCount.style.color = '#777';
+    }
+});
+
+
+
         // Form submission
         document.getElementById('ticketForm').addEventListener('submit', async function(e) {
             e.preventDefault();
