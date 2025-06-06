@@ -479,45 +479,49 @@ textarea[dir="rtl"] {
             <form id="ticketForm" enctype="multipart/form-data">
                 <div class="form-group floating-label">
                     <input type="text" id="name" name="name" placeholder=" " required>
-                    <label for="name">Your Name</label>
+                    <label for="name">Your Name/ الاسم</label>
                 </div>
 
                 <div class="form-group floating-label">
                     <select id="location" name="location" required>
-                        <option value=""></option>
-                        <option value="Main Office - Downtown">Main Office - Downtown</option>
-                        <option value="Branch Office - North">Branch Office - North</option>
-                        <option value="Branch Office - South">Branch Office - South</option>
-                        <option value="Branch Office - East">Branch Office - East</option>
-                        <option value="Remote Office">Remote Office</option>
-                        <option value="Warehouse">Warehouse</option>
+                        <option value="Al-Hassakah">Al-Hassakah</option>
+                        <option value="Al-Hol Camp">Al-Hol Camp</option>
+                        <option value="Al-Shadadi">Al-Shadadi</option>
+                        <option value="Ar-Raqqah">Ar-Raqqah</option>
+                        <option value="Der-E-Zour ( Hajin )">Der-E-Zour ( Hajin )</option>
+                        <option value="Der-E-Zour (Sabha)">Der-E-Zour (Sabha)</option>
+                        <option value="Der-E-Zour (Jazrat)">Der-E-Zour (Jazrat)</option>
+                        <option value="Washokani Camp">Washokani Camp</option>
                     </select>
-                    <label for="location">Office Location</label>
+                    <label for="location">Office Location/ الموقع</label>
                 </div>
 
                 <div class="form-group floating-label">
                     <select id="department" name="department" required>
-                        <option value=""></option>
+                        <option value="Logistics">Logistics</option>
                         <option value="HR">Human Resources</option>
                         <option value="Finance">Finance</option>
                         <option value="Security">Security</option>
                         <option value="Operations">Operations</option>
                         <option value="Program">Program</option>
+                        <option value="Media and Advocacy">Media and Advocacy</option>
+                        <option value="MEAL">MEAL</option>
+                        <option value="Complaince">Complaince</option>
                     </select>
-                    <label for="department">Department</label>
+                    <label for="department">Department/ القسم</label>
                 </div>
 
 <div class="form-group floating-label">
     <textarea id="description" name="description" placeholder=" " 
               maxlength="1000" required dir="auto"></textarea>
-    <label for="description">Problem Description</label>
+    <label for="description">Problem Description/ أوصف المشكلة</label>
     <div class="char-counter" style="text-align: right; font-size: 0.8rem; color: #777;">
         <span id="charCount">0</span>/1000 characters
     </div>
 </div>
 
                 <div class="form-group">
-                    <label>Screenshot of the Problem</label>
+                    <label>Screenshot of the Problem/لقطة شاشة لتوضيح المشكلة</label>
                     <div class="file-upload">
                         <input type="file" id="screenshot" name="screenshot" accept="image/*">
                         <label for="screenshot" class="file-upload-label">
