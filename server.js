@@ -245,6 +245,8 @@ app.post('/api/tickets', async (req, res) => {
 
     const newTicket = {
       name: formData.fields.name[0],
+  phone: formData.fields.phone[0],           // ← added
+
       location: formData.fields.location[0],
       department: formData.fields.department[0],
       description: formData.fields.description[0],
