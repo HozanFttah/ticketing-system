@@ -1,26 +1,131 @@
-// server.js
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const fsp = require('fs').promises;
 const multiparty = require('multiparty');
 const { createClient } = require('@supabase/supabase-js');
+const cors = require('cors');
 
+// Initialize Supabase client
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false }
-});
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors({
+  origin: [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    'https://*.onrender.com'
+  ],
+  methods: ['GET', 'POST', 'OPTIONS', 'HEAD', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Authentication middleware
+const authenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Unauthorized - No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'Unauthorized - Invalid token' });
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    console.error('Authentication error:', err);
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+};
+
+// Auth endpoints
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    // Check if email ends with @drd-me.org
+    if (!email.endsWith('@drd-me.org')) {
+      return res.status(403).json({ 
+        error: 'Only emails from @drd-me.org domain are allowed' 
+      });
+    }
+
+
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Please check your email for verification link' });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+   // Check if email ends with @drd-me.org
+    if (!email.endsWith('@drd-me.org')) {
+      return res.status(403).json({ 
+        error: 'Only emails from @drd-me.org domain are allowed' 
+      });
+    }
+
+
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+    res.json({ 
+      success: true, 
+      user: data.user,
+      session: data.session 
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(401).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/logout', authenticate, async (req, res) => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Logout error:', err);
+    res.status(500).json({ error: 'Failed to logout' });
+  }
+});
+
+app.get('/api/auth/user', authenticate, async (req, res) => {
+  try {
+    res.json({ user: req.user });
+  } catch (err) {
+    console.error('User fetch error:', err);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
 
 // DB functions
 async function getAllTickets() {
@@ -34,6 +139,7 @@ async function getAllTickets() {
 }
 
 async function createTicket(ticket) {
+
   const { data, error } = await supabase
     .from('tickets')
     .insert([ticket])
@@ -126,7 +232,7 @@ async function deleteTicket(id) {
     return true;
   } catch (error) {
     console.error(`Error deleting ticket ${id}:`, error.message);
-    throw error; // Re-throw for the calling function to handle
+    throw error;
   }
 }
 
@@ -206,22 +312,46 @@ app.patch('/api/tickets/:id', async (req, res) => {
   }
 });
 
-app.post('/api/tickets', async (req, res) => {
+app.post('/api/tickets', authenticate, async (req, res) => {
+  if (!req.user || !req.user.id) {
+    console.warn("Missing or invalid user ID");
+    return res.status(401).json({ error: "Invalid user session" });
+  }
+
+  let formData;
   try {
-    const formData = await new Promise((resolve, reject) => {
+    formData = await new Promise((resolve, reject) => {
       const form = new multiparty.Form();
+      
+      // Add error handling for form parsing
+      form.on('error', (err) => {
+        console.error('Form parsing error:', err);
+        reject(err);
+      });
+      
       form.parse(req, (err, fields, files) => {
-        if (err) reject(err);
+        if (err) {
+          console.error('Form parse error:', err);
+          reject(err);
+          return;
+        }
         resolve({ fields, files });
       });
     });
+  } catch (err) {
+    console.error('Error parsing form data:', err);
+    return res.status(400).json({ error: 'Invalid form data' });
+  }
 
-    let screenshotUrl = null;
+  let screenshotUrl = null;
+  let tempFilePath = null;
 
+  try {
     if (formData.files.screenshot && formData.files.screenshot[0]) {
       const file = formData.files.screenshot[0];
       const fileExt = path.extname(file.originalFilename);
       const fileName = `screenshot-${Date.now()}${fileExt}`;
+      tempFilePath = file.path;
 
       const fileBuffer = await fsp.readFile(file.path);
       
@@ -233,36 +363,76 @@ app.post('/api/tickets', async (req, res) => {
           duplex: 'half'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upload error:', error);
+        throw error;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('ticket-screenshots')
         .getPublicUrl(data.path);
 
       screenshotUrl = publicUrl;
-      await fsp.unlink(file.path);
     }
 
     const newTicket = {
       name: formData.fields.name[0],
-  phone: formData.fields.phone[0],           // ← added
-
+      phone: formData.fields.phone[0],
       location: formData.fields.location[0],
       department: formData.fields.department[0],
       description: formData.fields.description[0],
       urgency: formData.fields.urgency[0],
       status: 'Not Checked',
-      screenshot: screenshotUrl
+      screenshot: screenshotUrl,
+      user_id: req.user.id
     };
 
     const createdTicket = await createTicket(newTicket);
-    res.json({ success: true, ticket: createdTicket });
+    return res.json({ success: true, ticket: createdTicket });
+    
   } catch (error) {
     console.error('Error creating ticket:', error);
-    res.status(500).json({ error: error.message || 'Failed to create ticket' });
+    
+    // Clean up temporary files if they exist
+    if (tempFilePath) {
+      try {
+        await fsp.unlink(tempFilePath).catch(cleanupErr => {
+          console.warn('Failed to cleanup temp file:', cleanupErr);
+        });
+      } catch (cleanupErr) {
+        console.warn('Error during temp file cleanup:', cleanupErr);
+      }
+    }
+    
+    // Handle specific Supabase errors
+    if (error.message.includes('RLS')) {
+      console.error('RLS policy violation detected:', error);
+      return res.status(403).json({ 
+        error: 'Permission denied. Please try again or contact support.',
+        details: 'RLS policy violation'
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: error.message || 'Failed to create ticket',
+      details: error.details 
+    });
+  } finally {
+    // Ensure temporary files are cleaned up
+    if (formData.files.screenshot && formData.files.screenshot[0]) {
+      const file = formData.files.screenshot[0];
+      if (file.path && file.path !== tempFilePath) {
+        try {
+          await fsp.unlink(file.path).catch(cleanupErr => {
+            console.warn('Failed to cleanup additional temp file:', cleanupErr);
+          });
+        } catch (cleanupErr) {
+          console.warn('Error during additional temp file cleanup:', cleanupErr);
+        }
+      }
+    }
   }
 });
-
 // Start server
 async function startServer() {
   await initializeStorage();
