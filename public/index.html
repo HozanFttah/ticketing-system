@@ -1272,7 +1272,18 @@ document.getElementById('ticketForm').addEventListener('submit', async function(
     </div>
   `;
       successMsg.style.display = 'block';
-      
+            // Scroll to top to show the success message
+
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // This makes the scroll animated
+      });
+// Fallback for mobile
+setTimeout(() => {
+  window.scrollTo(0, 0);
+}, 1000);
+
+
       // Reset form
       this.reset();
       document.getElementById('imagePreview').classList.remove('visible');
@@ -1281,7 +1292,7 @@ document.getElementById('ticketForm').addEventListener('submit', async function(
       // Hide success message after 5 seconds
       setTimeout(() => {
         successMsg.style.display = 'none';
-      }, 5000);
+      }, 10000);
     } else {
       throw new Error(result.error || 'Failed to submit ticket');
     }
