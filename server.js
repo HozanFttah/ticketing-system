@@ -119,7 +119,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ 
       success: true, 
       user: data.user,
-      session: data.session 
+  session: data.session  // contains refresh_token, access_token, expires_at
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -147,6 +147,19 @@ app.get('/api/auth/user', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+    const { data, error } = await supabaseAdmin.auth.refreshSession({ refresh_token });
+
+    if (error) throw error;
+    res.json({ session: data.session });
+  } catch (err) {
+    console.error('Refresh error:', err);
+    res.status(401).json({ error: 'Failed to refresh session' });
+  }
+});
+
 
 // DB functions
 async function getAllTickets() {
