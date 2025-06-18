@@ -6,12 +6,34 @@ const multiparty = require('multiparty');
 const { createClient } = require('@supabase/supabase-js');
 const cors = require('cors');
 
-// Initialize Supabase client
-// Initialize Supabase client
+// Initialize Supabase clients
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAnonKey= process.env.SUPABASE_Anon_KEY;
+
+// Admin client for server-side operations
+const supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+});
+
+// Function to create user-specific client
+function createUserClient(accessToken) {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,13 +60,15 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const userClient = createUserClient(token);
+    const { data: { user }, error } = await userClient.auth.getUser();
 
     if (error || !user) {
       return res.status(401).json({ error: 'Unauthorized - Invalid token' });
     }
 
     req.user = user;
+    req.token = token;
     next();
   } catch (err) {
     console.error('Authentication error:', err);
@@ -63,9 +87,7 @@ app.post('/api/auth/signup', async (req, res) => {
       });
     }
 
-
-
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseAdmin.auth.signUp({
       email,
       password
     });
@@ -81,16 +103,14 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-   // Check if email ends with @drd-me.org
+    // Check if email ends with @drd-me.org
     if (!email.endsWith('@drd-me.org')) {
       return res.status(403).json({ 
         error: 'Only emails from @drd-me.org domain are allowed' 
       });
     }
 
-
-
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseAdmin.auth.signInWithPassword({
       email,
       password
     });
@@ -109,7 +129,8 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/auth/logout', authenticate, async (req, res) => {
   try {
-    const { error } = await supabase.auth.signOut();
+    const userClient = createUserClient(req.token);
+    const { error } = await userClient.auth.signOut();
     if (error) throw error;
     res.json({ success: true });
   } catch (err) {
@@ -129,7 +150,7 @@ app.get('/api/auth/user', authenticate, async (req, res) => {
 
 // DB functions
 async function getAllTickets() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('tickets')
     .select('*')
     .order('created_at', { ascending: false });
@@ -138,9 +159,9 @@ async function getAllTickets() {
   return data;
 }
 
-async function createTicket(ticket) {
-
-  const { data, error } = await supabase
+async function createTicket(ticket, accessToken) {
+  const userClient = createUserClient(accessToken);
+  const { data, error } = await userClient
     .from('tickets')
     .insert([ticket])
     .select();
@@ -160,7 +181,7 @@ async function updateTicketStatus(id, status) {
       throw new Error(`Invalid ticket ID: ${id}`);
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('tickets')
       .update({ 
         status: status
@@ -188,7 +209,7 @@ async function updateTicketStatus(id, status) {
 async function deleteTicket(id) {
   try {
     // 1. Get the ticket to find the screenshot reference
-    const { data: ticket, error: fetchError } = await supabase
+    const { data: ticket, error: fetchError } = await supabaseAdmin
       .from('tickets')
       .select('screenshot')
       .eq('id', id)
@@ -205,7 +226,7 @@ async function deleteTicket(id) {
         const filePath = url.pathname.split('/').pop();
         
         // Delete from storage
-        const { error: deleteError } = await supabase.storage
+        const { error: deleteError } = await supabaseAdmin.storage
           .from('ticket-screenshots')
           .remove([filePath]);
 
@@ -221,7 +242,7 @@ async function deleteTicket(id) {
     }
 
     // 3. Delete the ticket record
-    const { error: deleteTicketError } = await supabase
+    const { error: deleteTicketError } = await supabaseAdmin
       .from('tickets')
       .delete()
       .eq('id', id);
@@ -239,13 +260,13 @@ async function deleteTicket(id) {
 // Initialize bucket
 async function initializeStorage() {
   try {
-    const { data: buckets, error } = await supabase.storage.listBuckets();
+    const { data: buckets, error } = await supabaseAdmin.storage.listBuckets();
     if (error) throw error;
 
     const bucketExists = buckets.some(b => b.name === 'ticket-screenshots');
 
     if (!bucketExists) {
-      const { error: createError } = await supabase.storage.createBucket('ticket-screenshots', {
+      const { error: createError } = await supabaseAdmin.storage.createBucket('ticket-screenshots', {
         public: true,
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif'],
         fileSizeLimit: 10 * 1024 * 1024 // 10MB
@@ -354,8 +375,11 @@ app.post('/api/tickets', authenticate, async (req, res) => {
       tempFilePath = file.path;
 
       const fileBuffer = await fsp.readFile(file.path);
+
+	const userClient = createUserClient(req.token); // uses anon key + auth header
+
       
-      const { data, error } = await supabase.storage
+      const { data, error } = await userClient.storage
         .from('ticket-screenshots')
         .upload(fileName, fileBuffer, {
           contentType: file.headers['content-type'],
@@ -368,7 +392,7 @@ app.post('/api/tickets', authenticate, async (req, res) => {
         throw error;
       }
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: { publicUrl } } = userClient.storage
         .from('ticket-screenshots')
         .getPublicUrl(data.path);
 
@@ -387,7 +411,7 @@ app.post('/api/tickets', authenticate, async (req, res) => {
       user_id: req.user.id
     };
 
-    const createdTicket = await createTicket(newTicket);
+    const createdTicket = await createTicket(newTicket, req.token);
     return res.json({ success: true, ticket: createdTicket });
     
   } catch (error) {
@@ -433,6 +457,7 @@ app.post('/api/tickets', authenticate, async (req, res) => {
     }
   }
 });
+
 // Start server
 async function startServer() {
   await initializeStorage();
