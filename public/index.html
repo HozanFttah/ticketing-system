@@ -978,34 +978,43 @@
 
         // Auth functions
         async function checkAuthStatus() {
-            try {
-                if (sessionToken) {
-                    const response = await fetch('/api/auth/user', {
-                        headers: {
-                            'Authorization': `Bearer ${sessionToken}`
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        currentUser = data.user;
-                        updateAuthUI();
-                        return;
-                    }
-                }
-                
-                currentUser = null;
-                sessionToken = null;
-                localStorage.removeItem('supabase_session_token');
-                updateAuthUI();
-            } catch (error) {
-                console.error('Auth check error:', error);
-                currentUser = null;
-                sessionToken = null;
-                localStorage.removeItem('supabase_session_token');
-                updateAuthUI();
-            }
-        }
+  try {
+    const sessionData = JSON.parse(localStorage.getItem('supabase_session_data'));
+    if (!sessionData) throw new Error('No session');
+
+    const { access_token, refresh_token, expires_at } = sessionData;
+
+    // If session is expired, refresh it
+    const now = Math.floor(Date.now() / 1000);
+    if (expires_at < now) {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      localStorage.setItem('supabase_session_data', JSON.stringify(data.session));
+      sessionToken = data.session.access_token;
+    } else {
+      sessionToken = access_token;
+    }
+
+    const response = await fetch('/api/auth/user', {
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    const data = await response.json();
+    currentUser = data.user;
+  } catch (error) {
+    currentUser = null;
+    sessionToken = null;
+    localStorage.removeItem('supabase_session_data');
+  }
+
+  updateAuthUI();
+}
+
 
         function updateAuthUI() {
             if (currentUser) {
@@ -1046,8 +1055,9 @@
                 }
 
                 currentUser = data.user;
-                sessionToken = data.session.access_token;
-                localStorage.setItem('supabase_session_token', sessionToken);
+sessionToken = data.session.access_token;
+localStorage.setItem('supabase_session_data', JSON.stringify(data.session));
+
                 
                 hideModal('login-modal');
                 updateAuthUI();
