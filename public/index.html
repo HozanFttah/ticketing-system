@@ -1236,7 +1236,10 @@ document.getElementById('ticketForm').addEventListener('submit', async function(
   submitBtn.disabled = true;
   
   try {
-    const formData = new FormData(this);
+const formData = new FormData(this);
+if (this.compressedScreenshot) {
+  formData.set('screenshot', this.compressedScreenshot);
+}
     
     // Add timeout to the fetch request
     const controller = new AbortController();
@@ -1333,21 +1336,56 @@ setTimeout(() => {
 });
 
         // Image preview
-        document.getElementById('screenshot').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const preview = document.getElementById('imagePreview');
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.classList.add('visible');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                preview.classList.remove('visible');
-            }
-        });
+document.getElementById('screenshot').addEventListener('change', async function (e) {
+  const file = e.target.files[0];
+  const preview = document.getElementById('imagePreview');
+  const form = document.getElementById('ticketForm');
+
+  if (!file) {
+    preview.classList.remove('visible');
+    return;
+  }
+
+  const img = new Image();
+  const reader = new FileReader();
+
+  reader.onload = function (event) {
+    img.src = event.target.result;
+  };
+
+  img.onload = function () {
+    const canvas = document.createElement('canvas');
+    const MAX_WIDTH = 1024;
+    const scaleSize = MAX_WIDTH / img.width;
+    canvas.width = MAX_WIDTH;
+    canvas.height = img.height * scaleSize;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async function (blob) {
+      // Replace the file in the form
+      const compressedFile = new File([blob], file.name, {
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      });
+
+      // Create a new FormData to insert the compressed file
+      const newFormData = new FormData(form);
+      newFormData.set('screenshot', compressedFile); // replace original
+
+      // Save it globally to use in form submission
+      form.compressedScreenshot = compressedFile;
+
+      // Update preview
+      preview.src = URL.createObjectURL(blob);
+      preview.classList.add('visible');
+    }, 'image/jpeg', 0.7); // adjust quality here (0.7 = 70%)
+  };
+
+  reader.readAsDataURL(file);
+});
+
 
         // Add floating label functionality for dynamic elements
         document.querySelectorAll('.floating-label input, .floating-label select, .floating-label textarea').forEach(el => {
