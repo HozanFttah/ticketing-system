@@ -1,0 +1,31 @@
+{
+  "name": "it-ticketing-system",
+  "version": "1.0.0",
+  "description": "IT Support Ticketing System with Express and JSON storage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.50.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
+    "multer": "^1.4.5-lts.1",
+    "multiparty": "^4.2.3",
+    "path": "^0.12.7",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "ticketing",
+    "IT",
+    "support",
+    "express"
+  ],
+  "author": "IT Department",
+  "license": "MIT"
+}

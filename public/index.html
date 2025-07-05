@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Support Ticketing System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="IT Support" />
+<link rel="manifest" href="/site.webmanifest" />
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --radius: 12px;
+            --shadow: 0 10px 20px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+            --border-color: #dfe6e9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+/* Add this to your existing CSS */
+.auth-btn.loading {
+  background-color: #cccccc !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.auth-btn.loading .spinner {
+  display: inline-block;
+}
+
+.auth-btn .spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-left: 8px;
+}
+
+        /* Auth Section */
+        .auth-section {
+            background: white;
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            background: linear-gradient(to bottom right, white, #f8f9fa);
+            box-shadow: var(--shadow);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .user-info {
+            font-size: 0.9rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-info i {
+            color: var(--primary);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .auth-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius);
+            background-color: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .auth-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .auth-btn.secondary {
+            background-color: white;
+            color: var(--dark);
+            border: 1px solid var(--border-color);
+        }
+
+        .auth-btn.secondary:hover {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .auth-btn.danger {
+            background-color: var(--danger);
+        }
+
+        .auth-btn.danger:hover {
+            background-color: #d63031;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s ease-out;
+            border: 1px solid var(--border-color);
+            background: linear-gradient(to bottom right, white, #f8f9fa);
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+            position: relative;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-group label i {
+            color: var(--primary);
+            font-size: 0.9em;
+        }
+
+        .form-group input, 
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-family: inherit;
+            transition: var(--transition);
+            background-color: white;
+        }
+
+        .form-group input:focus, 
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .success-message {
+            color: var(--success);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Existing styles */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--success));
+            z-index: 2;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: -50px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .header h1 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            margin-bottom: 10px;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: clamp(1rem, 2vw, 1.1rem);
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-logo {
+            height: 120px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            transition: var(--transition);
+        }
+
+        .header-logo:hover {
+            transform: scale(1.05) rotate(-5deg);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)) brightness(1.1);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: var(--radius);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--light);
+        }
+
+        input[type="text"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea {
+            height: 120px;
+            resize: vertical;
+        }
+
+        textarea {
+            text-align: start;
+            line-height: 1.8;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif, 'Segoe UI Arabic', 'Arial Unicode MS';
+            unicode-bidi: plaintext;
+        }
+
+        textarea[dir="rtl"] {
+            text-align: right;
+            font-family: 'Segoe UI Arabic', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            border: 2px dashed var(--accent);
+            border-radius: var(--radius);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(72, 149, 239, 0.05);
+            gap: 8px;
+        }
+
+        .file-upload-label:hover {
+            background: rgba(72, 149, 239, 0.1);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .file-upload-label i {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        .urgency-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .urgency-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .urgency-option {
+            position: relative;
+        }
+
+        .urgency-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .urgency-option label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 0;
+            gap: 8px;
+        }
+
+        .urgency-option label i {
+            font-size: 1.2rem;
+        }
+
+        .urgency-option input[type="radio"]:checked + label {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .low { border-color: #2ecc71; }
+        .medium { border-color: #f39c12; }
+        .high { border-color: #e74c3c; }
+
+        .urgency-option input[type="radio"]:checked + label.low {
+            background: #2ecc71;
+            border-color: #2ecc71;
+        }
+
+        .urgency-option input[type="radio"]:checked + label.medium {
+            background: #f39c12;
+            border-color: #f39c12;
+        }
+
+        .urgency-option input[type="radio"]:checked + label.high {
+            background: #e74c3c;
+            border-color: #e74c3c;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+            background: #ccc;
+        }
+
+        .success-message, .error-message {
+            padding: 15px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border-left: 4px solid #2ecc71;
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .screenshot-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 15px;
+            border-radius: var(--radius);
+            border: 2px solid #e1e8ed;
+            display: none;
+            transition: var(--transition);
+        }
+
+        .screenshot-preview.visible {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .admin-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+            transition: var(--transition);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .admin-link:hover {
+            background: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Floating animation for header */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .header h1 {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Floating labels for better mobile UX */
+        .floating-label {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .floating-label input,
+        .floating-label select,
+        .floating-label textarea {
+            padding-top: 20px;
+        }
+
+        .floating-label label {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #777;
+            transition: var(--transition);
+            pointer-events: none;
+        }
+
+        .floating-label input:focus + label,
+        .floating-label input:not(:placeholder-shown) + label,
+        .floating-label select:focus + label,
+        .floating-label select:not([value=""]) + label,
+        .floating-label textarea:focus + label,
+        .floating-label textarea:not(:placeholder-shown) + label {
+            top: 5px;
+            left: 10px;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header-logo {
+                height: 60px;
+            }
+            
+            .admin-link {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .auth-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .auth-buttons {
+                width: 100%;
+            }
+
+            .auth-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Section -->
+    <div class="auth-section" id="auth-section">
+        <div class="user-info" id="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span id="auth-status">Not logged in</span>
+        </div>
+        <div class="auth-buttons" id="auth-buttons">
+            <button id="login-btn" class="auth-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+            <button id="signup-btn" class="auth-btn secondary"><i class="fas fa-user-plus"></i> Sign Up</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <img src="logo.png" alt="Company Logo" class="header-logo">
+            <h1><i class="fas fa-ticket-alt"></i> الدعم التقني</h1>
+            <p>نحن هنا لمساعدتك، يرجى إرسال تفاصيل المشكلة التقنية، وسنعمل على حلها بأقصى سرعة</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-message" id="successMessage"></div>
+            <div class="error-message" id="errorMessage"></div>
+            
+            <form id="ticketForm" enctype="multipart/form-data">
+                <div class="form-group floating-label">
+                    <input type="text" id="name" name="name" placeholder=" " required>
+                    <label for="name">Your Name/الاسم</label>
+                </div>
+                <div class="form-group floating-label">
+                    <input type="tel" id="phone" name="phone" placeholder=" " required pattern="[\d+\-\s()]{7,}">
+                    <label for="phone">Phone Number/رقم الهاتف</label>
+                </div>
+
+                <div class="form-group floating-label">
+                    <select id="location" name="location" required>
+                        <option value="Al-Hassakah">Al-Hassakah</option>
+                        <option value="Al-Hol Camp">Al-Hol Camp</option>
+                        <option value="Al-Shadadi">Al-Shadadi</option>
+                        <option value="Ar-Raqqah">Ar-Raqqah</option>
+                        <option value="Der-E-Zour ( Hajin )">Der-E-Zour ( Hajin )</option>
+                        <option value="Der-E-Zour (Sabha)">Der-E-Zour (Sabha)</option>
+                        <option value="Der-E-Zour (Jazrat)">Der-E-Zour (Jazrat)</option>
+                        <option value="Washokani Camp">Washokani Camp</option>
+                    </select>
+                    <label for="location">Office Location/الموقع</label>
+                </div>
+
+                <div class="form-group floating-label">
+                    <select id="department" name="department" required>
+                        <option value="Logistics">Logistics</option>
+                        <option value="HR">Human Resources</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Security">Security</option>
+                        <option value="Grants & Partnerships">Grants & Partnerships</option>
+                        <option value="Program">Program</option>
+                        <option value="Media and Advocacy">Media and Advocacy</option>
+                        <option value="MEAL">MEAL</option>
+                        <option value="Complaince">Complaince</option>
+                    </select>
+                    <label for="department">Department/القسم</label>
+                </div>
+
+                <div class="form-group floating-label">
+                    <textarea id="description" name="description" placeholder=" " 
+                              maxlength="1000" required dir="auto"></textarea>
+                    <label for="description">Problem Description/أوصف المشكلة</label>
+                    <div class="char-counter" style="text-align: right; font-size: 0.8rem; color: #777;">
+                        <span id="charCount">0</span>/1000 characters
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Screenshot of the Problem/لقطة شاشة لتوضيح المشكلة</label>
+                    <div class="file-upload">
+                        <input type="file" id="screenshot" name="screenshot" accept="image/*">
+                        <label for="screenshot" class="file-upload-label">
+                            <i class="fas fa-camera"></i>
+                            <span>Click to upload screenshot</span>
+                            <small>PNG, JPG, or GIF (Max 10MB)</small>
+                        </label>
+                    </div>
+                    <img id="imagePreview" class="screenshot-preview" alt="Screenshot preview">
+                </div>
+
+                <div class="form-group">
+                    <label>Urgency Level / درجة الضرورة</label>
+                    <div class="urgency-grid">
+                        <div class="urgency-option">
+                            <input type="radio" id="low" name="urgency" value="Low" required>
+                            <label for="low" class="low">
+                                <i class="fas fa-check-circle"></i>
+                                Low/منخفض
+                            </label>
+                        </div>
+                        <div class="urgency-option">
+                            <input type="radio" id="medium" name="urgency" value="Medium" required>
+                            <label for="medium" class="medium">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Medium/متوسط
+                            </label>
+                        </div>
+                        <div class="urgency-option">
+                            <input type="radio" id="high" name="urgency" value="High" required>
+                            <label for="high" class="high">
+                                <i class="fas fa-fire"></i>
+                                High/طارئة
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span id="submitText">Submit Ticket / إرسال الطلب</span>
+                    <div class="spinner" id="spinner"></div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>تسجيل دخول</span>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-email">
+                        <i class="fas fa-envelope"></i>
+                        <span>Email</span>
+                    </label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">
+                        <i class="fas fa-lock"></i>
+                        <span>Password</span>
+                    </label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <div id="login-error" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="auth-btn secondary" id="cancel-login">
+                        <i class="fas fa-times"></i>
+                        <span>إلغاء</span>
+                    </button>
+<button type="submit" class="auth-btn">
+  <i class="fas fa-sign-in-alt"></i>
+  <span>تسجيل دخول</span>
+  <span class="spinner"></span>
+</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Sign Up Modal -->
+    <div class="modal" id="signup-modal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <i class="fas fa-user-plus"></i>
+                <span>إنشاء حساب</span>
+            </div>
+            <form id="signup-form">
+                <div class="form-group">
+                    <label for="signup-email">
+                        <i class="fas fa-envelope"></i>
+                        <span>Email</span>
+                    </label>
+                    <input type="email" id="signup-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">
+                        <i class="fas fa-lock"></i>
+                        <span>Password</span>
+                    </label>
+                    <input type="password" id="signup-password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm">
+                        <i class="fas fa-lock"></i>
+                        <span>Confirm Password</span>
+                    </label>
+                    <input type="password" id="signup-confirm" required minlength="6">
+                </div>
+                <div id="signup-error" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <div id="signup-success" class="success-message" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="auth-btn secondary" id="cancel-signup">
+                        <i class="fas fa-times"></i>
+                        <span>إلغاء</span>
+                    </button>
+<button type="submit" class="auth-btn">
+  <i class="fas fa-user-plus"></i>
+  <span>إنشاء حساب</span>
+  <span class="spinner"></span>
+</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Authentication system
+        let currentUser = null;
+        let sessionToken = localStorage.getItem('supabase_session_token') || null;
+
+        // DOM Elements
+        const authSection = document.getElementById('auth-section');
+        const userInfo = document.getElementById('user-info');
+        const authButtons = document.getElementById('auth-buttons');
+        const authStatus = document.getElementById('auth-status');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const loginModal = document.getElementById('login-modal');
+        const signupModal = document.getElementById('signup-modal');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMsg = document.getElementById('successMessage');
+        const errorMsg = document.getElementById('errorMessage');
+
+        // Check auth status on page load
+        document.addEventListener('DOMContentLoaded', checkAuthStatus);
+
+        // Show modal functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            if (modalId === 'login-modal') {
+                document.getElementById('login-error').style.display = 'none';
+            } else if (modalId === 'signup-modal') {
+                document.getElementById('signup-error').style.display = 'none';
+            }
+        }
+
+        // Show error message
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span>${message}</span>`;
+            element.style.display = 'flex';
+  // Reset all submit buttons
+  document.querySelectorAll('.auth-btn.loading').forEach(btn => {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  });
+        }
+
+        function showSuccessMessage(message) {
+            successMsg.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 5000);
+        }
+
+        function showErrorMessage(message) {
+            errorMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            errorMsg.style.display = 'block';
+            setTimeout(() => {
+                errorMsg.style.display = 'none';
+            }, 5000);
+        }
+
+        // Auth functions
+        async function checkAuthStatus() {
+  try {
+    const sessionData = JSON.parse(localStorage.getItem('supabase_session_data'));
+    if (!sessionData) throw new Error('No session');
+
+    const { access_token, refresh_token, expires_at } = sessionData;
+
+    // If session is expired, refresh it
+    const now = Math.floor(Date.now() / 1000);
+    if (expires_at < now) {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      localStorage.setItem('supabase_session_data', JSON.stringify(data.session));
+      sessionToken = data.session.access_token;
+    } else {
+      sessionToken = access_token;
+    }
+
+    const response = await fetch('/api/auth/user', {
+      headers: { 'Authorization': `Bearer ${sessionToken}` }
+    });
+    const data = await response.json();
+    currentUser = data.user;
+  } catch (error) {
+    currentUser = null;
+    sessionToken = null;
+    localStorage.removeItem('supabase_session_data');
+  }
+
+  updateAuthUI();
+}
+
+
+        function updateAuthUI() {
+            if (currentUser) {
+                authStatus.innerHTML = `<i class="fas fa-user-circle"></i> <span>Logged in as ${currentUser.email}</span>`;
+                authButtons.innerHTML = '<button id="logout-btn" class="auth-btn danger"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>';
+                submitBtn.disabled = false;
+                submitBtn.title = 'Submit Ticket';
+                
+                document.getElementById('logout-btn').addEventListener('click', logout);
+            } else {
+                authStatus.innerHTML = `<i class="fas fa-user-circle"></i> <span>لم يتم تسجيل الدخول</span>`;
+                authButtons.innerHTML = `
+                    <button id="login-btn" class="auth-btn"><i class="fas fa-sign-in-alt"></i> تسجيل دخول</button>
+                    <button id="signup-btn" class="auth-btn secondary"><i class="fas fa-user-plus"></i> إنشاء حساب</button>
+                `;
+                submitBtn.disabled = true;
+                submitBtn.title = 'Please login to submit a ticket';
+                
+                document.getElementById('login-btn').addEventListener('click', () => showModal('login-modal'));
+                document.getElementById('signup-btn').addEventListener('click', () => showModal('signup-modal'));
+            }
+        }
+
+        async function login(email, password) {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Login failed');
+                }
+
+                currentUser = data.user;
+sessionToken = data.session.access_token;
+localStorage.setItem('supabase_session_data', JSON.stringify(data.session));
+
+                
+                hideModal('login-modal');
+                updateAuthUI();
+                showSuccessMessage('تم تسجيل دخولك بنجاح');
+            } catch (error) {
+                showError('login-error', error.message);
+            }
+        }
+
+        async function signup(email, password) {
+            try {
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Signup failed');
+                }
+
+                document.getElementById('signup-success').innerHTML = `<i class="fas fa-check-circle"></i> <span>لطفاً تحقق من بريدك الإلكتروني للحصول على رابط التحقق</span>`;
+                document.getElementById('signup-success').style.display = 'flex';
+                document.getElementById('signup-form').reset();
+            } catch (error) {
+                showError('signup-error', error.message);
+            }
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Logout failed');
+                }
+
+                currentUser = null;
+                sessionToken = null;
+                localStorage.removeItem('supabase_session_token');
+                updateAuthUI();
+                showSuccessMessage('تم تسجيل خروجك بنجاح');
+            } catch (error) {
+                console.error('Logout error:', error);
+                showErrorMessage('Logout failed: ' + error.message);
+            }
+        }
+
+        // Event listeners for auth
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+	    const loginBtn = document.querySelector('#login-form button[type="submit"]');
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+  // Add loading state
+  loginBtn.classList.add('loading');
+  loginBtn.disabled = true;
+
+  // Client-side domain check
+  if (!email.endsWith('@drd-me.org')) {
+    showError('login-error', 'Only @drd-me.org emails are allowed');
+    loginBtn.classList.remove('loading');
+    loginBtn.disabled = false;
+    return;
+  }
+
+
+
+  try {
+    await login(email, password);
+  } finally {
+    // Remove loading state
+    loginBtn.classList.remove('loading');
+    loginBtn.disabled = false;}
+
+     });
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const signupBtn = document.querySelector('#signup-form button[type="submit"]');
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm').value;
+
+  // Add loading state
+  signupBtn.classList.add('loading');
+  signupBtn.disabled = true;
+
+
+  if (!email.endsWith('@drd-me.org')) {
+    showError('signup-error', 'Only @drd-me.org emails are allowed');
+    signupBtn.classList.remove('loading');
+    signupBtn.disabled = false;
+    return;
+  }
+            
+  if (password !== confirmPassword) {
+    showError('signup-error', 'Passwords do not match');
+    signupBtn.classList.remove('loading');
+    signupBtn.disabled = false;
+    return;
+  }
+            
+  try {
+    await signup(email, password);
+  } finally {
+    // Remove loading state
+    signupBtn.classList.remove('loading');
+    signupBtn.disabled = false;
+  }
+        });
+
+        document.getElementById('cancel-login').addEventListener('click', () => hideModal('login-modal'));
+        document.getElementById('cancel-signup').addEventListener('click', () => hideModal('signup-modal'));
+
+        // Character counter for description
+        const descriptionField = document.getElementById('description');
+        const charCount = document.getElementById('charCount');
+
+        descriptionField.addEventListener('input', function() {
+            const currentLength = this.value.length;
+            charCount.textContent = currentLength;
+            
+            // Detect if Arabic text is being entered
+            const arabicRegex = /[\u0600-\u06FF]/;
+            if (arabicRegex.test(this.value)) {
+                this.style.textAlign = 'right';
+                this.style.fontFamily = "'Segoe UI Arabic', 'Arial Unicode MS', sans-serif";
+            } else {
+                this.style.textAlign = 'left';
+                this.style.fontFamily = "'Segoe UI', system-ui, sans-serif";
+            }
+            
+            // Optional: Change color when approaching limit
+            if (currentLength > 900) {
+                charCount.style.color = 'var(--warning)';
+            } else if (currentLength > 950) {
+                charCount.style.color = 'var(--danger)';
+            } else {
+                charCount.style.color = '#777';
+            }
+        });
+
+document.getElementById('ticketForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  if (!currentUser || !sessionToken) {
+    showErrorMessage('Please login to submit a ticket');
+    return;
+  }
+  
+  const submitBtn = document.getElementById('submitBtn');
+  const submitText = document.getElementById('submitText');
+  const spinner = document.getElementById('spinner');
+  
+  // Hide previous messages
+  successMsg.style.display = 'none';
+  errorMsg.style.display = 'none';
+  
+  // Show loading state
+  submitText.textContent = 'Submitting...';
+  spinner.style.display = 'block';
+  submitBtn.disabled = true;
+  
+  try {
+const formData = new FormData(this);
+if (this.compressedScreenshot) {
+  formData.set('screenshot', this.compressedScreenshot);
+}
+    
+    // Add timeout to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    
+    const response = await fetch('/api/tickets', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`
+      },
+      body: formData,
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    // Handle HTTP errors
+    if (!response.ok) {
+      let errorMsg = 'Failed to submit ticket';
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.error || errorMsg;
+        
+        // Special handling for RLS errors
+        if (errorData.details === 'RLS policy violation') {
+          errorMsg = 'انتهت صلاحية الجلسة لطفاً قم بتحديث الصفحة وسجل دخولك مجدداً';
+          // Force logout
+          await logout();
+        }
+      } catch (parseError) {
+        console.error('Error parsing error response:', parseError);
+      }
+      throw new Error(errorMsg);
+    }
+    
+    const result = await response.json();
+    
+    if (result.success) {
+   successMsg.innerHTML = `
+    <div dir="rtl" style="text-align: right;">
+      <i class="fas fa-check-circle"></i> 
+تم إرسال طلبك بنجاح، يقوم فريق تقنية المعلومات لدينا بمراجعته، لا تقلق طلبك قيد المتابعة
+    </div>
+  `;
+      successMsg.style.display = 'block';
+            // Scroll to top to show the success message
+
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth' // This makes the scroll animated
+      });
+// Fallback for mobile
+setTimeout(() => {
+  window.scrollTo(0, 0);
+}, 1000);
+
+
+      // Reset form
+      this.reset();
+      document.getElementById('imagePreview').classList.remove('visible');
+      document.getElementById('charCount').textContent = '0';
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        successMsg.style.display = 'none';
+      }, 10000);
+    } else {
+      throw new Error(result.error || 'Failed to submit ticket');
+    }
+  } catch (error) {
+    console.error('Error submitting ticket:', error);
+    
+    // Handle abort (timeout) specifically
+    if (error.name === 'AbortError') {
+      errorMsg.innerHTML = `
+        <i class="fas fa-exclamation-circle"></i> 
+        Request timed out. Please check your network connection and try again.
+      `;
+    } else {
+      errorMsg.innerHTML = `
+        <i class="fas fa-exclamation-circle"></i> 
+        Error: ${error.message}
+      `;
+    }
+    
+    errorMsg.style.display = 'block';
+    errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } finally {
+    // Reset button state
+    submitText.textContent = 'Submit Ticket / إرسال الطلب';
+    spinner.style.display = 'none';
+    submitBtn.disabled = false;
+  }
+});
+
+        // Image preview
+document.getElementById('screenshot').addEventListener('change', async function (e) {
+  const file = e.target.files[0];
+  const preview = document.getElementById('imagePreview');
+  const form = document.getElementById('ticketForm');
+
+  if (!file) {
+    preview.classList.remove('visible');
+    return;
+  }
+
+  const img = new Image();
+  const reader = new FileReader();
+
+  reader.onload = function (event) {
+    img.src = event.target.result;
+  };
+
+  img.onload = function () {
+    const canvas = document.createElement('canvas');
+    const MAX_WIDTH = 1024;
+    const scaleSize = MAX_WIDTH / img.width;
+    canvas.width = MAX_WIDTH;
+    canvas.height = img.height * scaleSize;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async function (blob) {
+      // Replace the file in the form
+      const compressedFile = new File([blob], file.name, {
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      });
+
+      // Create a new FormData to insert the compressed file
+      const newFormData = new FormData(form);
+      newFormData.set('screenshot', compressedFile); // replace original
+
+      // Save it globally to use in form submission
+      form.compressedScreenshot = compressedFile;
+
+      // Update preview
+      preview.src = URL.createObjectURL(blob);
+      preview.classList.add('visible');
+    }, 'image/jpeg', 0.7); // adjust quality here (0.7 = 70%)
+  };
+
+  reader.readAsDataURL(file);
+});
+
+
+        // Add floating label functionality for dynamic elements
+        document.querySelectorAll('.floating-label input, .floating-label select, .floating-label textarea').forEach(el => {
+            // Trigger the check on page load for prefilled fields
+            if (el.value) {
+                el.dispatchEvent(new Event('change'));
+            }
+            
+            // Add event listeners
+            el.addEventListener('change', function() {
+                const label = this.nextElementSibling;
+                if (this.value) {
+                    label.style.top = '5px';
+                    label.style.left = '10px';
+                    label.style.fontSize = '0.8rem';
+                    label.style.color = 'var(--primary)';
+                } else {
+                    label.style.top = '15px';
+                    label.style.left = '15px';
+                    label.style.fontSize = '1rem';
+                    label.style.color = '#777';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

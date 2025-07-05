@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Support Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="shortcut icon" href="/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="IT Support" />
+<link rel="manifest" href="/site.webmanifest" />
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --warning-color: #f8961e;
+            --info-color: #4895ef;
+            --dark-color: #2b2d42;
+            --light-color: #f8f9fa;
+            --gray-color: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            color: var(--dark-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(67, 97, 238, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-logo {
+            height: 120px;
+            width: auto;
+            margin-right: 12px;
+            transition: var(--transition);
+        }
+
+        .header-logo:hover {
+            transform: scale(1.05);
+            filter: brightness(0) invert(0.9);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Search and Filter Section */
+        .controls-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .search-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            padding-left: 3.25rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background-color: var(--light-color);
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            background-color: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-color);
+            font-size: 1.1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 0.875rem 1.25rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            cursor: pointer;
+            min-width: 180px;
+            background-color: var(--light-color);
+            transition: var(--transition);
+            font-weight: 500;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            background-color: white;
+        }
+
+        .clear-filters {
+            background: var(--light-color);
+            color: var(--dark-color);
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 0.875rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .clear-filters:hover {
+            background: rgba(0,0,0,0.05);
+            color: var(--primary-color);
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.75rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            transition: var(--transition);
+            border: 1px solid rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary-color);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-label {
+            color: var(--gray-color);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .not-checked { color: var(--warning-color); }
+        .in-progress { color: var(--info-color); }
+        .solved { color: var(--success-color); }
+        .total { color: var(--primary-color); }
+
+        /* Tickets Section */
+        .tickets-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 3rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            color: var(--dark-color);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .refresh-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.875rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .refresh-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        /* Updated Tickets Grid - Horizontal Layout */
+        .tickets-grid {
+      display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: flex-start;
+        }
+
+        .ticket-card {
+border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: var(--transition);
+    border: 1px solid rgba(0,0,0,0.05);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%; /* Full width of the container */
+
+        }
+
+        .ticket-card::before {
+content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
+        }
+
+        .ticket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-color: rgba(67, 97, 238, 0.2);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .ticket-id {
+            font-weight: 700;
+            color: var(--dark-color);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .status-badge i {
+            font-size: 0.9rem;
+        }
+
+        .status-not-checked {
+            background: rgba(248, 150, 30, 0.1);
+            color: var(--warning-color);
+            border: 1px solid rgba(248, 150, 30, 0.3);
+        }
+
+        .status-in-progress {
+            background: rgba(72, 149, 239, 0.1);
+            color: var(--info-color);
+            border: 1px solid rgba(72, 149, 239, 0.3);
+        }
+
+        .status-solved {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(76, 201, 240, 0.3);
+        }
+
+        .ticket-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+text-align: left; /* Ensure text aligns to the left */
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: var(--gray-color);
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-value {
+            color: var(--dark-color);
+            font-weight: 600;
+            font-size: 0.95rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .urgency-high { color: var(--danger-color); }
+        .urgency-medium { color: var(--warning-color); }
+        .urgency-low { color: var(--success-color); }
+
+        /* Improved Description Box - Collapsible */
+        .description-box {
+            background: var(--light-color);
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: var(--transition);
+            flex-grow: 1;
+        }
+
+        .description-header {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.02);
+            pointer-events: all;
+        }
+
+        .description-header:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .description-toggle {
+            transition: transform 0.3s ease;
+            margin-left: 0.5rem;
+            pointer-events: none;
+        }
+
+        .description-content {
+            padding: 0 1rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .description-box.expanded .description-content {
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .description-box.expanded .description-toggle {
+            transform: rotate(180deg);
+        }
+
+        .description-text {
+            color: var(--dark-color);
+            font-weight: 500;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            text-align: start;
+            unicode-bidi: plaintext; /* For Arabic support */
+        }
+
+        /* Screenshot Container - More Compact */
+        .screenshot-container {
+margin: 0.5rem 0; /* Reduced margin to save space */
+    text-align: left; /* Align left for better flow */
+        }
+
+        .screenshot-preview {
+max-width: 80px; /* Reduced width for smaller thumbnail */
+    max-height: 60px; /* Reduced height for smaller thumbnail */
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Slightly smaller shadow */
+    border: 1px solid rgba(0,0,0,0.1);
+    object-fit: cover; /* Changed to cover to maintain aspect ratio */
+    display: inline-block;
+        }
+
+        .screenshot-preview:hover {
+transform: scale(1.05); /* Slightly smaller hover effect */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+.ticket-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: auto;
+    flex-wrap: wrap;
+    align-items: center; /* Align items vertically */
+}
+
+        .status-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            cursor: pointer;
+            min-width: 180px;
+            background-color: var(--light-color);
+            transition: var(--transition);
+            font-weight: 600;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .btn-delete {
+ background: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1rem; /* Reduced padding for a more compact button */
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex;
+    align-items: right;
+    gap: 0.5rem;
+    width: auto; /* Prevent stretching */
+    max-width: 150px; /* Set a maximum width to keep it compact */
+        }
+
+        .btn-delete:hover {
+            background: #e5177e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(247, 37, 133, 0.3);
+        }
+
+        /* Empty and Loading States */
+        .no-tickets {
+            text-align: center;
+            color: var(--gray-color);
+            font-size: 1.1rem;
+            padding: 3rem;
+            background: var(--light-color);
+            border-radius: var(--border-radius);
+            border: 1px dashed rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            grid-column: 1 / -1;
+        }
+
+        .no-tickets i {
+            font-size: 2.5rem;
+            opacity: 0.7;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            grid-column: 1 / -1;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid rgba(67, 97, 238, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error Message */
+        .error-message {
+            background: #fce8e8;
+            color: #d32f2f;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: none;
+            border-left: 4px solid #d32f2f;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            grid-column: 1 / -1;
+        }
+
+        /* Notification System */
+        .notification-container {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 1000;
+            max-width: 380px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .notification {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            box-shadow: var(--box-shadow);
+            border-left: 4px solid var(--primary-color);
+            transform: translateX(120%);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-title {
+            font-weight: 700;
+            color: var(--dark-color);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--gray-color);
+            transition: var(--transition);
+        }
+
+        .notification-close:hover {
+            color: var(--danger-color);
+            transform: rotate(90deg);
+        }
+
+        .notification-body {
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .notification-urgency {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .notification-urgency-high {
+            background: rgba(247, 37, 133, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(247, 37, 133, 0.2);
+        }
+
+        .notification-urgency-medium {
+            background: rgba(248, 150, 30, 0.1);
+            color: var(--warning-color);
+            border: 1px solid rgba(248, 150, 30, 0.2);
+        }
+
+        .notification-urgency-low {
+            background: rgba(76, 201, 240, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(76, 201, 240, 0.2);
+        }
+
+        .notification-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--gray-color);
+            align-items: center;
+        }
+
+        .notification-footer button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .notification-footer button:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        /* Modal for Images */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            max-width: 90%;
+            max-height: 90vh;
+            position: relative;
+            transform: scale(0.9);
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+            border-radius: var(--border-radius);
+            object-fit: contain;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: var(--danger-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(247, 37, 133, 0.3);
+        }
+
+        .modal-close:hover {
+            transform: rotate(90deg) scale(1.1);
+            background: #e5177e;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .container {
+                padding: 0 1.25rem;
+            }
+            
+            .ticket-info {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .nav-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+            
+            .controls-section {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1.25rem;
+            }
+            
+            .search-container {
+                min-width: 100%;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            .filter-select, .clear-filters {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .ticket-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .ticket-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .ticket-actions {
+                flex-direction: row;
+        justify-content: space-between; /* Space out the select and button */
+            }
+            
+            .status-select, .btn-delete {
+width: auto; /* Allow natural width */
+        max-width: 48%; /* Ensure they fit side by side with some gap */            }
+            
+            .notification-container {
+                max-width: calc(100% - 2rem);
+                left: 1rem;
+                right: 1rem;
+                top: auto;
+                bottom: 1rem;
+            }
+
+            .screenshot-preview {
+                max-width: 150px;
+                max-height: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tickets-section {
+                padding: 1.25rem;
+            }
+            
+            .ticket-card {
+                padding: 1rem;
+            }
+
+            .description-box.expanded .description-content {
+                max-height: 200px;
+            }
+        }
+
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(67, 97, 238, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(67, 97, 238, 0); }
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark-color);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            z-index: 10;
+        }
+
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+            bottom: calc(100% + 5px);
+        }
+
+        /* RTL support for Arabic */
+        [dir="rtl"] .ticket-id,
+        [dir="rtl"] .info-label,
+        [dir="rtl"] .info-value,
+        [dir="rtl"] .description-text {
+            text-align: right;
+        }
+
+        [dir="rtl"] .description-header {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .ticket-info {
+            text-align: right;
+        }
+
+/* Add to your existing styles */
+#enableAudioBtn.enabled {
+  background: linear-gradient(to right, #10b981, #059669);
+}
+
+#enableAudioBtn.enabled:hover {
+  background: linear-gradient(to right, #059669, #047857);
+}
+
+#enableAudioBtn.enabled span:first-child {
+  content: "🔔";
+    color: white;
+
+}
+
+    </style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script></head>
+<body>
+    <div class="header">
+        <div class="header-content">
+
+            <img src="logo.png" alt="Company Logo" class="header-logo">
+            <h1><i class="fas fa-tools"></i> IT Support Admin Panel</h1>
+
+<!-- Add this right after the filter-group div in controls-section -->
+<button id="enableAudioBtn" class="flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium py-2 px-4 rounded-lg shadow hover:shadow-md transition-all duration-200">
+  <span class="text-lg">🔕</span>
+</button>
+        </div>
+
+    </div>
+
+    <div class="container">
+        <!-- Search and Filter Controls -->
+        <div class="controls-section">
+            <div class="search-container">
+                <span class="search-icon"><i class="fas fa-search"></i></span>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search tickets by ID, name, location or description..." oninput="handleSearch()" aria-label="Search tickets">
+            </div>
+            
+            <div class="filter-group">
+                <select class="filter-select" id="statusFilter" onchange="applyFilters()" aria-label="Filter by status">
+                    <option value="">All Statuses</option>
+                    <option value="Not Checked">Not Checked</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Solved">Solved</option>
+                </select>
+                
+                <select class="filter-select" id="urgencyFilter" onchange="applyFilters()" aria-label="Filter by urgency">
+                    <option value="">All Urgencies</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+                
+                <button class="clear-filters" onclick="clearFilters()">
+                    <i class="fas fa-times"></i>
+                    <span>Clear Filters</span>
+                </button>
+            </div>
+
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <!-- Stats will be loaded here -->
+        </div>
+
+        <div class="tickets-section">
+            <div class="section-header">
+                <h2><i class="fas fa-ticket-alt"></i> All Tickets</h2>
+
+            </div>
+            
+            <div class="error-message" id="errorMessage" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText"></span>
+            </div>
+            
+            <div id="ticketsContainer" class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading tickets...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Image Modal -->
+    <div class="modal-overlay" id="imageModal">
+        <div class="modal-content">
+            <img class="modal-image" id="modalImage" alt="Ticket screenshot">
+            <button class="modal-close" onclick="closeImageModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+<audio id="notificationSound" src="/audio.mp3" preload="auto"></audio>
+<script>
+    // Enhanced IT Support Admin Panel Script
+    let tickets = [];
+    let currentFilters = {
+        searchQuery: '',
+        status: '',
+        urgency: ''
+    };
+    
+    // Polling interval for updates (in milliseconds)
+    const POLL_INTERVAL = 5000; // 5 seconds
+    let pollIntervalId;
+    let lastTicketCount = 0;
+    let audioEnabled = false;
+    let notificationSound;
+	// Ask for notification permission
+if (Notification.permission !== 'granted') {
+  Notification.requestPermission();
+}
+
+
+    // Load tickets when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize audio
+        notificationSound = document.getElementById('notificationSound');
+        
+        // Set up enable audio button
+        document.getElementById('enableAudioBtn').addEventListener('click', enableAudioNotifications);
+        
+        // Load initial tickets
+        loadTickets();
+        
+        // Set up polling for updates
+        pollIntervalId = setInterval(loadTickets, POLL_INTERVAL);
+        
+        // Add event listener for escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    });
+
+    function enableAudioNotifications() {
+        audioEnabled = true;
+        const btn = document.getElementById('enableAudioBtn');
+        btn.innerHTML = '<i class="fas fa-bell"></i><span></span>';
+        btn.classList.add('enabled');
+        
+        // Play a test sound to confirm it works
+        notificationSound.play().catch(error => {
+            console.error('Error playing notification sound:', error);
+            showNotification({
+                title: 'Audio Error',
+                message: 'Please interact with the page first or check browser permissions for sound.',
+                type: 'error',
+                autoClose: 5000
+            });
+        });
+    }
+
+    // Load tickets from server
+    async function loadTickets() {
+        const container = document.getElementById('ticketsContainer');
+        const errorMsg = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        try {
+            // Show loading state only if we don't have any tickets yet
+            if (tickets.length === 0) {
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading tickets...</p>
+                    </div>
+                `;
+            }
+            
+            errorMsg.style.display = 'none';
+            
+            // Fetch tickets from API
+            const response = await fetch('/api/tickets');
+            
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status} ${response.statusText}`);
+            }
+            
+            const newTickets = await response.json();
+            
+            // Check if tickets have changed
+            if (JSON.stringify(tickets) !== JSON.stringify(newTickets)) {
+                // Check for new tickets if we already had some
+                if (tickets.length > 0 && newTickets.length > tickets.length) {
+                    const newTicketIds = newTickets.map(t => t.id);
+                    const oldTicketIds = tickets.map(t => t.id);
+                    const addedTickets = newTickets.filter(t => !oldTicketIds.includes(t.id));
+                    
+                    // Show notification for each new ticket
+                    if (addedTickets.length > 0) {
+                        addedTickets.forEach(ticket => {
+                            showNewTicketNotification(ticket);
+                            // Play sound if enabled
+                            if (audioEnabled) {
+                                notificationSound.play().catch(error => {
+                                    console.error('Error playing notification sound:', error);
+                                });
+                            }
+                        });
+                    }
+                }
+                
+                tickets = newTickets;
+                tickets.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                applyFilters();
+                updateStats();
+            }
+            
+        } catch (error) {
+            console.error('Error loading tickets:', error);
+            errorText.textContent = `Error loading tickets: ${error.message}`;
+            errorMsg.style.display = 'flex';
+            container.innerHTML = `
+                <div class="no-tickets">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Failed to load tickets</p>
+                    <button class="refresh-btn" onclick="loadTickets()" style="margin-top: 1rem;">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Retry</span>
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Show notification for new ticket
+let newTicketCount = 0;
+
+function showNewTicketNotification(ticket) {
+  const urgencyClass = `notification-urgency-${ticket.urgency.toLowerCase()}`;
+  const urgencyIcon = ticket.urgency === 'High' ? 'fas fa-exclamation-circle' : 
+                    ticket.urgency === 'Medium' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
+
+  // Update tab title with badge count
+  newTicketCount++;
+  document.title = `(${newTicketCount}) New Tickets - IT Support`;
+
+  // Local in-app UI notification (already in your system)
+  showNotification({
+    title: 'New Ticket Created',
+    message: `
+        <strong>#${ticket.id}</strong> - ${ticket.name}<br>
+        <small>${ticket.location} • ${ticket.department}</small><br><br>
+        <span class="notification-urgency ${urgencyClass}">
+            <i class="${urgencyIcon}"></i> ${ticket.urgency} Priority
+        </span>
+    `,
+    type: 'info',
+    autoClose: 10000
+  });
+
+  // System-level browser notification
+  if (Notification.permission === 'granted') {
+    new Notification(`🆕 New Ticket #${ticket.id}`, {
+      body: `${ticket.name} - ${ticket.department} (${ticket.urgency})`,
+      icon: "/favicon.ico",
+      tag: `ticket-${ticket.id}` // avoids duplicate notifications
+    });
+  }
+}
+window.addEventListener('focus', () => {
+  newTicketCount = 0;
+  document.title = "IT Support Admin Panel";
+});
+
+
+
+    // Handle search input with debounce
+    let searchTimeout;
+    function handleSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentFilters.searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            applyFilters();
+        }, 300);
+    }
+	
+
+    // Apply all active filters
+    function applyFilters() {
+        try {
+            currentFilters.status = document.getElementById('statusFilter').value;
+            currentFilters.urgency = document.getElementById('urgencyFilter').value;
+            
+            let filteredTickets = [...tickets];
+            
+            // Apply search filter
+            if (currentFilters.searchQuery) {
+                filteredTickets = filteredTickets.filter(ticket => 
+                    ticket.name.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.location.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.department.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.description.toLowerCase().includes(currentFilters.searchQuery) ||
+                    ticket.id.toString().includes(currentFilters.searchQuery)
+                );
+            }
+            
+            // Apply status filter
+            if (currentFilters.status) {
+                filteredTickets = filteredTickets.filter(ticket => 
+                    ticket.status === currentFilters.status
+                );
+            }
+            
+            // Apply urgency filter
+            if (currentFilters.urgency) {
+                filteredTickets = filteredTickets.filter(ticket => 
+                    ticket.urgency === currentFilters.urgency
+                );
+            }
+            
+            renderTickets(filteredTickets);
+            
+        } catch (error) {
+            console.error('Error applying filters:', error);
+            const errorMsg = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = 'Error applying filters: ' + error.message;
+            errorMsg.style.display = 'flex';
+        }
+    }
+
+    // Clear all filters
+    function clearFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('urgencyFilter').value = '';
+        
+        currentFilters = {
+            searchQuery: '',
+            status: '',
+            urgency: ''
+        };
+        
+        renderTickets(tickets);
+    }
+
+    // Render tickets in the UI
+    function renderTickets(ticketsToRender) {
+        const container = document.getElementById('ticketsContainer');
+        
+        if (ticketsToRender.length === 0) {
+            container.innerHTML = `
+                <div class="no-tickets">
+                    <i class="fas fa-inbox"></i>
+                    <p>No tickets match your criteria</p>
+                    <button class="clear-filters" onclick="clearFilters()" style="margin-top: 1rem;">
+                        <i class="fas fa-times"></i>
+                        <span>Clear Filters</span>
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div class="tickets-grid">
+                ${ticketsToRender.map(ticket => `
+                    <div class="ticket-card fade-in">
+                        <div class="ticket-header">
+                            <span class="ticket-id" data-id="${ticket.id}">
+                                <i class="fas fa-hashtag"></i> ${ticket.id} - ${ticket.name}
+                            </span>
+                            <span class="status-badge status-${ticket.status.toLowerCase().replace(' ', '-')}">
+                                <i class="fas ${getStatusIcon(ticket.status)}"></i>
+                                ${ticket.status}
+                            </span>
+                        </div>
+                        
+                        <div class="ticket-info">
+  <div class="info-item">
+    <span class="info-label"><i class="fas fa-phone"></i> Phone</span>
+    <span class="info-value">${ticket.phone}</span>
+  </div>
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-map-marker-alt"></i> Location
+                                </span>
+                                <span class="info-value">${ticket.location}</span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-building"></i> Department
+                                </span>
+                                <span class="info-value">${ticket.department}</span>
+                            </div>
+
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="fas fa-bolt"></i> Urgency
+                                </span>
+                                <span class="info-value urgency-${ticket.urgency.toLowerCase()}">
+                                    <i class="fas ${getUrgencyIcon(ticket.urgency)}"></i> ${ticket.urgency}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">
+                                    <i class="far fa-clock"></i> Submitted
+                                </span>
+                                <span class="info-value">${formatDate(ticket.timestamp)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="description-box">
+                            <div class="description-header" onclick="toggleDescription(this)">
+                                <div class="info-label">
+                                    <i class="fas fa-align-left"></i> Issue Description
+                                    <i class="fas fa-chevron-down description-toggle"></i>
+                                </div>
+                            </div>
+                            <div class="description-content">
+                                <div class="description-text">${ticket.description}</div>
+                            </div>
+                        </div>
+                        
+                        ${ticket.screenshot ? `
+                            <div class="screenshot-container">
+                                <div class="info-label">
+                                    <i class="fas fa-camera"></i> Screenshot
+                                </div>
+                                <img src="${ticket.screenshot}" class="screenshot-preview" 
+                                     alt="Screenshot for ticket #${ticket.id}" 
+                                     onclick="openImageModal('${ticket.screenshot}')">
+                            </div>
+                        ` : ''}
+                        
+                        <div class="ticket-actions">
+                            <select class="status-select" onchange="updateTicketStatus(${ticket.id}, this.value)" 
+                                    aria-label="Change ticket status">
+                                <option value="Not Checked" ${ticket.status === 'Not Checked' ? 'selected' : ''}>
+                                    Not Checked
+                                </option>
+                                <option value="In Progress" ${ticket.status === 'In Progress' ? 'selected' : ''}>
+                                    In Progress
+                                </option>
+                                <option value="Solved" ${ticket.status === 'Solved' ? 'selected' : ''}>
+                                    Solved
+                                </option>
+                            </select>
+                            <button class="btn-delete" onclick="deleteTicket(${ticket.id})" 
+                                    aria-label="Delete ticket">
+                                <i class="fas fa-trash-alt"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // Toggle description box
+    function toggleDescription(element) {
+        const descriptionBox = element.closest('.description-box');
+        descriptionBox.classList.toggle('expanded');
+    }
+
+    // Get icon for status
+    function getStatusIcon(status) {
+        switch(status) {
+            case 'Not Checked': return 'fa-hourglass-start';
+            case 'In Progress': return 'fa-spinner fa-pulse';
+            case 'Solved': return 'fa-check-circle';
+            default: return 'fa-ticket-alt';
+        }
+    }
+
+    // Get icon for urgency
+    function getUrgencyIcon(urgency) {
+        switch(urgency) {
+            case 'High': return 'fa-exclamation-circle';
+            case 'Medium': return 'fa-exclamation-triangle';
+            case 'Low': return 'fa-info-circle';
+            default: return 'fa-question-circle';
+        }
+    }
+
+    // Update statistics
+    function updateStats() {
+        const stats = {
+            total: tickets.length,
+            notChecked: tickets.filter(t => t.status === 'Not Checked').length,
+            inProgress: tickets.filter(t => t.status === 'In Progress').length,
+            solved: tickets.filter(t => t.status === 'Solved').length
+        };
+        
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-number total">${stats.total}</div>
+                <div class="stat-label">
+                    <i class="fas fa-ticket-alt"></i> Total Tickets
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number not-checked">${stats.notChecked}</div>
+                <div class="stat-label">
+                    <i class="fas fa-hourglass-start"></i> Not Checked
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number in-progress">${stats.inProgress}</div>
+                <div class="stat-label">
+                    <i class="fas fa-spinner"></i> In Progress
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number solved">${stats.solved}</div>
+                <div class="stat-label">
+                    <i class="fas fa-check-circle"></i> Solved
+                </div>
+            </div>
+        `;
+    }
+
+    // Update ticket status
+    async function updateTicketStatus(ticketId, newStatus) {
+        try {
+            const response = await fetch(`/api/tickets/${ticketId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to update ticket status: ${response.status} ${response.statusText}`);
+            }
+            
+            // Update the local tickets array
+            const updatedTicket = await response.json();
+            const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+            if (ticketIndex !== -1) {
+                tickets[ticketIndex] = updatedTicket.ticket;
+            }
+            
+            // Show success notification
+            showNotification({
+                title: 'Status Updated',
+                message: `Ticket #${ticketId} is now marked as "${newStatus}"`,
+                type: 'success',
+                autoClose: 3000
+            });
+            
+            // Re-render with current filters
+            applyFilters();
+            updateStats();
+            
+        } catch (error) {
+            console.error('Error updating ticket:', error);
+            
+            // Show error notification
+            showNotification({
+                title: 'Update Failed',
+                message: `Error updating ticket #${ticketId}: ${error.message}`,
+                type: 'error',
+                autoClose: 5000
+            });
+            
+            // Reload to reset the dropdown
+            loadTickets();
+        }
+    }
+
+    // Delete ticket
+    async function deleteTicket(ticketId) {
+        if (!confirm(`Are you sure you want to delete ticket #${ticketId}? This action cannot be undone.`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/tickets/${ticketId}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to delete ticket: ${response.status} ${response.statusText}`);
+            }
+            
+            // Remove from local tickets array
+            tickets = tickets.filter(t => t.id !== ticketId);
+            
+            // Show success notification
+            showNotification({
+                title: 'Ticket Deleted',
+                message: `Ticket #${ticketId} has been successfully deleted`,
+                type: 'success',
+                autoClose: 3000
+            });
+            
+            // Re-render with current filters
+            applyFilters();
+            updateStats();
+            
+        } catch (error) {
+            console.error('Error deleting ticket:', error);
+            
+            // Show error notification
+            showNotification({
+                title: 'Deletion Failed',
+                message: `Error deleting ticket #${ticketId}: ${error.message}`,
+                type: 'error',
+                autoClose: 5000
+            });
+        }
+    }
+
+    // Format date for display
+    function formatDate(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffInHours = Math.abs(now - date) / 36e5;
+        
+        // If within 24 hours, show relative time
+        if (diffInHours < 24) {
+            const diffInMinutes = Math.round(diffInHours * 60);
+            if (diffInMinutes < 1) return 'Just now';
+            if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+            return `${Math.floor(diffInHours)} hour${Math.floor(diffInHours) === 1 ? '' : 's'} ago`;
+        }
+        
+        // Otherwise show full date
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Open image in modal
+    function openImageModal(imageSrc) {
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        
+        modalImage.src = imageSrc;
+        modalImage.alt = `Screenshot for ticket`;
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close image modal
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Show a notification
+    function showNotification({ title, message, type = 'info', autoClose = 5000 }) {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        
+        // Set icon and color based on type
+        let icon, color;
+        switch (type) {
+            case 'success':
+                icon = 'fas fa-check-circle';
+                color = 'var(--success-color)';
+                break;
+            case 'warning':
+                icon = 'fas fa-exclamation-triangle';
+                color = 'var(--warning-color)';
+                break;
+            case 'error':
+                icon = 'fas fa-times-circle';
+                color = 'var(--danger-color)';
+                break;
+            default:
+                icon = 'fas fa-info-circle';
+                color = 'var(--info-color)';
+        }
+        
+        notification.innerHTML = `
+            <div class="notification-header">
+                <span class="notification-title" style="color: ${color}">
+                    <i class="${icon}"></i> ${title}
+                </span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="notification-body">
+                ${message}
+            </div>
+        `;
+        
+        if (autoClose) {
+            notification.innerHTML += `
+                <div class="notification-footer">
+                    <small>${new Date().toLocaleTimeString()}</small>
+                    <div class="progress-bar" style="height: 3px; background: rgba(0,0,0,0.1); width: 100%; margin-top: 0.5rem;">
+                        <div class="progress-fill" style="height: 100%; background: ${color}; width: 100%; animation: progress ${autoClose}ms linear forwards;"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Add CSS for progress animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes progress {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        container.prepend(notification);
+        
+        // Show the notification with animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        
+        // Auto-remove if autoClose is set
+        if (autoClose) {
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, autoClose);
+        }
+    }
+</script></body>
+</html>
