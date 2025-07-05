@@ -1262,6 +1262,10 @@ function showNewTicketNotification(ticket) {
   // 🧠 Update browser tab badge
   newTicketCount++;
   document.title = `(${newTicketCount}) New Tickets - IT Support`;
+if ('setAppBadge' in navigator) {
+  navigator.setAppBadge(newTicketCount).catch(console.error);
+}
+
 
   // ✅ In-app UI toast
   showNotification({
