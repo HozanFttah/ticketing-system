@@ -1256,14 +1256,14 @@ let newTicketCount = 0;
 
 function showNewTicketNotification(ticket) {
   const urgencyClass = `notification-urgency-${ticket.urgency.toLowerCase()}`;
-  const urgencyIcon = ticket.urgency === 'High' ? 'fas fa-exclamation-circle' : 
-                    ticket.urgency === 'Medium' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
+  const urgencyIcon = ticket.urgency === 'High' ? 'fas fa-exclamation-circle' :
+                      ticket.urgency === 'Medium' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
 
-  // Update tab title with badge count
+  // 🧠 Update browser tab badge
   newTicketCount++;
   document.title = `(${newTicketCount}) New Tickets - IT Support`;
 
-  // Local in-app UI notification (already in your system)
+  // ✅ In-app UI toast
   showNotification({
     title: 'New Ticket Created',
     message: `
@@ -1277,19 +1277,30 @@ function showNewTicketNotification(ticket) {
     autoClose: 10000
   });
 
-  // System-level browser notification
+  // ✅ Show browser/system notification
   if (Notification.permission === 'granted') {
-    new Notification(`🆕 New Ticket #${ticket.id}`, {
-      body: `${ticket.name} - ${ticket.department} (${ticket.urgency})`,
-      icon: "/favicon.ico",
-      tag: `ticket-${ticket.id}` // avoids duplicate notifications
-    });
+    // ✅ If app is installed (standalone PWA), use service worker
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) {
+          reg.showNotification(`🆕 New Ticket #${ticket.id}`, {
+            body: `${ticket.name} - ${ticket.department} (${ticket.urgency})`,
+            icon: "/favicon.ico",
+            tag: `ticket-${ticket.id}`
+          });
+        }
+      });
+    } else {
+      // ✅ Otherwise, use normal browser notification
+      new Notification(`🆕 New Ticket #${ticket.id}`, {
+        body: `${ticket.name} - ${ticket.department} (${ticket.urgency})`,
+        icon: "/favicon.ico",
+        tag: `ticket-${ticket.id}`
+      });
+    }
   }
-  if ('setAppBadge' in navigator) {
-  navigator.setAppBadge(newTicketCount).catch(console.error);
 }
 
-}
 window.addEventListener('focus', () => {
   newTicketCount = 0;
   document.title = "IT Support Admin Panel";
